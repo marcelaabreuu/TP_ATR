@@ -4,10 +4,24 @@
 #include <conio.h>  // _getch
 #include <conio.h>		// _getch
 
+DWORD WINAPI ThreadFunc(LPVOID);
+
 int main() 
 {
+	HANDLE hEvent = OpenEvent(EVENT_MODIFY_STATE, TRUE, "ExieAlarmes");
+	HANDLE hThread;
+	DWORD dwThreadId;
+	int i;
+	uintptr_t _beginthreadex( 
+		NULL,
+		0,
+		ThreadFunc,
+		(LPVOID)i,
+		0,
+		&dwThreadId
+	);
 	SetConsoleTitle("Console Alarmes");
-	std::cout << "Exibição de Alarmes em Execução";
+	printf("Exibição de Alarmes em Execução");
 	_getch();
 	return EXIT_SUCCESS;
 }

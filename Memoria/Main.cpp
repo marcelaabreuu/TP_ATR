@@ -8,6 +8,7 @@ int main()
     BOOL status;
     STARTUPINFO si;                  // StartUpInformation para novo processo
     PROCESS_INFORMATION NewProcess[3];  // Informações sobre novo processo criado
+    HANDLE hEventA, hEventB, hEventC, hEventD, hEvent1, hEvent2 ;
 
     SetConsoleTitle("Console Principal");
 
@@ -79,6 +80,22 @@ int main()
 
     char action = _getch();
     std::cout << "\nFoi selecionado: " << action << std::endl;
+
+    //Cria os eventos que acordam as threads
+    
+    hEvent1 = CreateEvent(NULL, FALSE, FALSE, "ExieAlarmes"); //Reset automático e inicializa não-sinalizado
+    hEvent2 = CreateEvent(NULL, FALSE, FALSE, "ExieDados"); 
+
+    switch (action) {
+    case '1':
+        PulseEvent(hEvent1);
+        break;
+    case '2':
+        PulseEvent(hEvent2);
+        break;
+    default:
+        // Instruções para o caso default (opcional)
+    }
 
     // Fechar handles dos processos
     for (int i = 0; i < 3; i++) {
