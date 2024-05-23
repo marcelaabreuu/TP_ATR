@@ -4,7 +4,8 @@
 #include <iostream>
 #include <process.h>	
 #include <conio.h>  // _getch
-#include ".\CheckForError.h"
+#define _CHECKERROR	1	// Ativa função CheckForError
+#include "CheckForError.h"
 
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
@@ -21,10 +22,13 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 	}
 }
 
+
+
 int main() 
 {
 	SetConsoleTitle("Console Alarmes");
-	HANDLE hEvent = OpenEvent(EVENT_MODIFY_STATE, TRUE, "ExibeAlarmes");
+	HANDLE hEvent;
+	hEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, "Alarme");
 	HANDLE hThread;
 	DWORD dwThreadId;
 	int i=0;
@@ -37,8 +41,19 @@ int main()
 		(CAST_LPDWORD)&dwThreadId	
 	);
 	if (hThread) printf("Thread criada Id= %0x \n", dwThreadId);
-	WaitForSingleObject(hEvent, INFINITE);
-	printf("Evento acionado");
+
+	Sleep(500);
+
+	DWORD ret;
+	int nTipoEvento;
+
+	do {
+		printf("Thread inicial esperando evento\n");
+		ret = WaitForSingleObject(hEvent, INFINITE);
+		nTipoEvento = ret - WAIT_OBJECT_0;
+		if (nTipoEvento == 0) printf("Evento acionado\n");
+	} while (nTipoEvento == 0);	// Esc foi escolhido
+	printf("Thread terminando...\n");
 
 	/*while (1) {
 		WaitForSingleObject(hEvent, INFINITE);
