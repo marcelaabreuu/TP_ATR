@@ -35,6 +35,38 @@ int main()
     if (!status)
         std::cerr << "Erro na abertura cmd teclado = " << GetLastError() << "\n";
 
+    //Criação de Console de exibição de Alarmes
+    status = CreateProcess(
+        "..\\x64\\Debug\\ExibeAlarmes.exe",         // Caminho do arquivo executável
+        NULL,                // Apontador p/ parâmetros de linha de comando
+        NULL,                // Apontador p/ descritor de segurança
+        NULL,                // Idem, threads do processo
+        FALSE,               // Herança de handles
+        CREATE_NEW_CONSOLE,  // Flags de criação
+        NULL,                // Herança do ambiente de execução
+        "..\\x64\\Debug",                // Diretório do arquivo executável
+        &si,                 // lpStartUpInfo
+        &NewProcess);        // lpProcessInformation
+
+    if (!status)
+        std::cerr << "Erro na abertura Exibe Alarmes = " << GetLastError() << "\n";
+
+    //Criação de Console de exibição de Dados
+    status = CreateProcess(
+        "..\\x64\\Debug\\ExibeDados.exe",         // Caminho do arquivo executável
+        NULL,                // Apontador p/ parâmetros de linha de comando
+        NULL,                // Apontador p/ descritor de segurança
+        NULL,                // Idem, threads do processo
+        FALSE,               // Herança de handles
+        CREATE_NEW_CONSOLE,  // Flags de criação
+        NULL,                // Herança do ambiente de execução
+        "..\\x64\\Debug",                // Diretório do arquivo executável
+        &si,                 // lpStartUpInfo
+        &NewProcess);        // lpProcessInformation
+
+    if (!status)
+        std::cerr << "Erro na abertura Exibe Dados = " << GetLastError() << "\n";
+
     //Espera do processo ser aberto 
     WaitForSingleObject(NewProcess.hProcess, INFINITE);
 

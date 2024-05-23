@@ -6,8 +6,8 @@
 
 int main()
 {
-	SetConsoleTitle("Processo Teclado");
-	std::cout << "Hello World\n";
+	SetConsoleTitle("Processo Lista Circular");
+	std::cout << "Processo Lista Circular\n";
 	_getch();
 	return EXIT_SUCCESS;
 }
