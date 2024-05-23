@@ -3,6 +3,8 @@
 #include <iostream>
 #include <conio.h>  // _getch
 
+#define	ESC			0x1B
+
 int main()
 {
     BOOL status;
@@ -69,33 +71,34 @@ int main()
     //Espera todos os processos serem abertos 
     WaitForMultipleObjects(3, &NewProcess->hProcess, TRUE, INFINITE);
 
+    //Cria os eventos que acordam as threads
+    hEvent1 = CreateEvent(NULL, FALSE, FALSE, "ExibeAlarmes"); //Reset automático e inicializa não-sinalizado
+    hEvent2 = CreateEvent(NULL, FALSE, FALSE, "ExieDados");
+
     
     std::cout << "Selecione:\n";
-    std::cout << "a: Iniciar/Pausar captura de alrmes\n";
+    std::cout << "a: Iniciar/Pausar captura de alarmes\n";
     std::cout << "b: Iniciar/Pausar sistema de pesagem de alrmes\n";
     std::cout << "c: Iniciar/Pausar leitura do CLP de alrmes\n";
     std::cout << "d: Iniciar/Pausar captura de dados\n";
     std::cout << "1: Iniciar/Pausar exibição de alrmes\n";
     std::cout << "2: Iniciar/Pausar exibição de dados\n";
 
-    char action = _getch();
-    std::cout << "\nFoi selecionado: " << action << std::endl;
+    char action;
 
-    //Cria os eventos que acordam as threads
-    
-    hEvent1 = CreateEvent(NULL, FALSE, FALSE, "ExieAlarmes"); //Reset automático e inicializa não-sinalizado
-    hEvent2 = CreateEvent(NULL, FALSE, FALSE, "ExieDados"); 
-
-    switch (action) {
-    case '1':
-        PulseEvent(hEvent1);
-        break;
-    case '2':
-        PulseEvent(hEvent2);
-        break;
-    default:
-        // Instruções para o caso default (opcional)
-    }
+    do {
+        action = _getch();
+        
+        switch (action) {
+        case '1':
+            std::cout << "\nFoi selecionado: " << action << std::endl;
+            SetEvent(hEvent1);
+            break;
+        case '2':
+            SetEvent(hEvent2);
+            break;
+        }
+    } while (action != ESC);
 
     // Fechar handles dos processos
     for (int i = 0; i < 3; i++) {
