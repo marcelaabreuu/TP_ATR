@@ -4,6 +4,9 @@
 #include <conio.h>  // _getch
 #include <conio.h>		// _getch
 
+typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
+typedef unsigned* CAST_LPDWORD;
+
 DWORD WINAPI ThreadFunc(LPVOID);
 
 int main() 
@@ -12,14 +15,15 @@ int main()
 	HANDLE hThread;
 	DWORD dwThreadId;
 	int i;
-	uintptr_t _beginthreadex( 
+	hThread = (HANDLE) _beginthreadex(
 		NULL,
 		0,
-		ThreadFunc,
+		(CAST_FUNCTION)ThreadFunc,	// casting necessário
 		(LPVOID)i,
 		0,
-		&dwThreadId
+		(CAST_LPDWORD)&dwThreadId	// cating necessário
 	);
+	if (hThread) printf("Thread criada Id= %0x \n", dwThreadId);
 	SetConsoleTitle("Console Alarmes");
 	printf("Exibição de Alarmes em Execução");
 	_getch();
