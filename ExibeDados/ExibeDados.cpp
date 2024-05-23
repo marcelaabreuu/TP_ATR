@@ -4,10 +4,10 @@
 #include <conio.h>  // _getch
 #include <conio.h>		// _getch
 
-int main() 
+int main()
 {
-	SetConsoleTitle("Console Alarmes");
-	std::cout << "Processo ExibeAlarmes";
+	SetConsoleTitle("Console Dados");
+	std::cout << "Processo ExibeDados";
 	_getch();
 	return EXIT_SUCCESS;
 }
