@@ -3,7 +3,7 @@
 #include <windows.h>
 #include <iostream>
 #include <process.h>	
-#include <conio.h>  // _getch
+#include <conio.h> 
 #include ".\CheckForError.h"
 
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
@@ -16,6 +16,10 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 	{
 		if (estado == 1) {
 			printf("\nExibe Alarmes\n");
+			Sleep(500);
+		}
+		else {
+			printf("\nThread Bloqueada\n");
 			Sleep(500);
 		}
 	}
