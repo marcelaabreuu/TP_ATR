@@ -7,7 +7,7 @@
 int main()
 {
 	SetConsoleTitle("Console Dados");
-	std::cout << "Processo ExibeDados";
+	std::cout << "Exibição de Dados em Execução";
 	_getch();
 	return EXIT_SUCCESS;
 }
