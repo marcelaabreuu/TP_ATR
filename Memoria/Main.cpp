@@ -7,11 +7,9 @@ int main()
 {
     BOOL status;
     STARTUPINFO si;                  // StartUpInformation para novo processo
-    PROCESS_INFORMATION NewProcess;  // Informações sobre novo processo criado
+    PROCESS_INFORMATION NewProcess[3];  // Informações sobre novo processo criado
 
-    SetConsoleTitle("Processo principal de tratamento do teclado");
-    std::cout << "Digite uma tecla qualquer para criar uma instancia:\n";
-    _getch();
+    SetConsoleTitle("Console Principal");
 
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);  // Tamanho da estrutura em bytes
@@ -30,7 +28,7 @@ int main()
         NULL,                // Herança do ambiente de execução
         "..\\x64\\Debug",                // Diretório do arquivo executável
         &si,                 // lpStartUpInfo
-        &NewProcess);        // lpProcessInformation
+        &NewProcess[0]);        // lpProcessInformation
 
     if (!status)
         std::cerr << "Erro na abertura cmd teclado = " << GetLastError() << "\n";
@@ -46,7 +44,7 @@ int main()
         NULL,                // Herança do ambiente de execução
         "..\\x64\\Debug",                // Diretório do arquivo executável
         &si,                 // lpStartUpInfo
-        &NewProcess);        // lpProcessInformation
+        &NewProcess[1]);        // lpProcessInformation
 
     if (!status)
         std::cerr << "Erro na abertura Exibe Alarmes = " << GetLastError() << "\n";
@@ -62,17 +60,30 @@ int main()
         NULL,                // Herança do ambiente de execução
         "..\\x64\\Debug",                // Diretório do arquivo executável
         &si,                 // lpStartUpInfo
-        &NewProcess);        // lpProcessInformation
+        &NewProcess[2]);        // lpProcessInformation
 
     if (!status)
         std::cerr << "Erro na abertura Exibe Dados = " << GetLastError() << "\n";
 
-    //Espera do processo ser aberto 
-    WaitForSingleObject(NewProcess.hProcess, INFINITE);
+    //Espera todos os processos serem abertos 
+    WaitForMultipleObjects(3, &NewProcess->hProcess, TRUE, INFINITE);
 
-    // Fechar handles
-    CloseHandle(NewProcess.hProcess);
-    CloseHandle(NewProcess.hThread);
+    
+    std::cout << "Selecione:\n";
+    std::cout << "a: Iniciar/Pausar captura de alrmes\n";
+    std::cout << "b: Iniciar/Pausar sistema de pesagem de alrmes\n";
+    std::cout << "c: Iniciar/Pausar leitura do CLP de alrmes\n";
+    std::cout << "d: Iniciar/Pausar captura de dados\n";
+    std::cout << "1: Iniciar/Pausar exibição de alrmes\n";
+    std::cout << "2: Iniciar/Pausar exibição de dados\n";
+
+    char action = _getch();
+    std::cout << "\nFoi selecionado: " << action << std::endl;
+
+    // Fechar handles dos processos
+    for (int i = 0; i < 3; i++) {
+        CloseHandle(NewProcess[i].hProcess);
+    }
 
     return EXIT_SUCCESS;
 }

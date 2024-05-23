@@ -7,7 +7,7 @@
 int main() 
 {
 	SetConsoleTitle("Console Alarmes");
-	std::cout << "Processo ExibeAlarmes";
+	std::cout << "Exibição de Alarmes em Execução";
 	_getch();
 	return EXIT_SUCCESS;
 }
