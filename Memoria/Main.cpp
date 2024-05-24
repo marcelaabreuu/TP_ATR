@@ -1,25 +1,38 @@
 #define WIN32_LEAN_AND_MEAN
+#define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES 1
 #include <windows.h>
 #include <iostream>
 #include <conio.h>  // _getch
+#include <stdio.h>
+#include <stdlib.h>
 
 #define	ESC			0x1B
+
+HANDLE hEventA, hEventB, hEventC, hEventD;
+HANDLE hEvent1; 
+HANDLE hEvent2;
 
 int main()
 {
     BOOL status;
     STARTUPINFO si;                  // StartUpInformation para novo processo
     PROCESS_INFORMATION NewProcess[3];  // Informações sobre novo processo criado
-    HANDLE hEventA, hEventB, hEventC, hEventD, hEvent1, hEvent2 ;
+
 
     SetConsoleTitle("Console Principal");
+
+    //handle para evento
+    //Cria os eventos que acordam as threads
+    hEvent1 = CreateEvent(NULL, FALSE, FALSE, "Alarme"); //Reset automático e inicializa não-sinalizado
+    hEvent2 = CreateEvent(NULL, FALSE, FALSE, "Dados");
 
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);  // Tamanho da estrutura em bytes
     ZeroMemory(&NewProcess, sizeof(NewProcess));
     // Processo de leitura de teclado
 
-    //const char* programName = "C:\\Windows\\System32\\cmd.exe";
+
+   
 
     status = CreateProcess(
         "..\\x64\\Debug\\ListaCircular.exe",         // Caminho do arquivo executável
@@ -71,10 +84,8 @@ int main()
     //Espera todos os processos serem abertos 
     WaitForMultipleObjects(3, &NewProcess->hProcess, TRUE, INFINITE);
 
-    //Cria os eventos que acordam as threads
-    hEvent1 = CreateEvent(NULL, FALSE, FALSE, "ExibeAlarmes"); //Reset automático e inicializa não-sinalizado
-    hEvent2 = CreateEvent(NULL, FALSE, FALSE, "ExieDados");
 
+   
     
     std::cout << "Selecione:\n";
     std::cout << "a: Iniciar/Pausar captura de alarmes\n";
@@ -98,6 +109,7 @@ int main()
             SetEvent(hEvent2);
             break;
         }
+        
     } while (action != ESC);
 
     // Fechar handles dos processos

@@ -3,8 +3,7 @@
 #include <windows.h>
 #include <iostream>
 #include <process.h>	
-#include <conio.h> 
-#include ".\CheckForError.h"
+#include <conio.h>  // _getch
 
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
@@ -25,10 +24,12 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 	}
 }
 
+HANDLE hEvent1;
+
 int main() 
 {
 	SetConsoleTitle("Console Alarmes");
-	HANDLE hEvent = OpenEvent(EVENT_MODIFY_STATE, TRUE, "ExibeAlarmes");
+	hEvent1 = CreateEvent(NULL, FALSE, FALSE, "Alarme");
 	HANDLE hThread;
 	DWORD dwThreadId;
 	int i=0;
@@ -40,23 +41,20 @@ int main()
 		0,
 		(CAST_LPDWORD)&dwThreadId	
 	);
-	if (hThread) printf("Thread criada Id= %0x \n", dwThreadId);
-	WaitForSingleObject(hEvent, INFINITE);
-	printf("Evento acionado");
 
-	/*while (1) {
-		WaitForSingleObject(hEvent, INFINITE);
+	Sleep(500);
+
+	DWORD ret;
+
+	while (1) {
+		ret = WaitForSingleObject(hEvent1, INFINITE);
 		if (estado == 0) {
 			estado = 1;
-			printf("\nAutorizado\n");
-			Sleep(500);
 		}
 		else {
 			estado = 0;
-			printf("\nNao Autorizado");
-			Sleep(500);
 		}
-	}*/
+	}
 	return EXIT_SUCCESS;
 }
 
