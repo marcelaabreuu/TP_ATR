@@ -6,6 +6,7 @@
 #include <conio.h>  // _getch
 #define _CHECKERROR	1	// Ativa função CheckForError
 #include "CheckForError.h"
+#include <tchar.h>
 
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
@@ -22,13 +23,12 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 	}
 }
 
-
+HANDLE hEvent1;
 
 int main() 
 {
 	SetConsoleTitle("Console Alarmes");
-	HANDLE hEvent;
-	hEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, "Alarme");
+	hEvent1 = CreateEvent(NULL, FALSE, FALSE, "Alarme");
 	HANDLE hThread;
 	DWORD dwThreadId;
 	int i=0;
@@ -40,34 +40,20 @@ int main()
 		0,
 		(CAST_LPDWORD)&dwThreadId	
 	);
-	if (hThread) printf("Thread criada Id= %0x \n", dwThreadId);
 
 	Sleep(500);
 
 	DWORD ret;
-	int nTipoEvento;
 
-	do {
-		printf("Thread inicial esperando evento\n");
-		ret = WaitForSingleObject(hEvent, INFINITE);
-		nTipoEvento = ret - WAIT_OBJECT_0;
-		if (nTipoEvento == 0) printf("Evento acionado\n");
-	} while (nTipoEvento == 0);	// Esc foi escolhido
-	printf("Thread terminando...\n");
-
-	/*while (1) {
-		WaitForSingleObject(hEvent, INFINITE);
+	while (1) {
+		ret = WaitForSingleObject(hEvent1, INFINITE);
 		if (estado == 0) {
 			estado = 1;
-			printf("\nAutorizado\n");
-			Sleep(500);
 		}
 		else {
 			estado = 0;
-			printf("\nNao Autorizado");
-			Sleep(500);
 		}
-	}*/
+	}
 	return EXIT_SUCCESS;
 }
 
