@@ -19,7 +19,7 @@
 using namespace std;
 
 #define _CHECKERROR	1	// Ativa função CheckForError
-#include "CheckForError.h"
+
 
 // Casting para terceiro e sexto parâmetros da função _beginthreadex
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
