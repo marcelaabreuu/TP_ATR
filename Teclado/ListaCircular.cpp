@@ -19,7 +19,7 @@
 using namespace std;
 
 #define _CHECKERROR	1	// Ativa função CheckForError
-#include "CheckForError.h"
+
 
 // Casting para terceiro e sexto parâmetros da função _beginthreadex
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
@@ -30,6 +30,8 @@ const int NumConsumers = 2;
 
 const int MaxMsgAlarme = 200;
 const int MaxNSEQ = 999999;
+
+int i, j, k;
 
 
 
@@ -103,6 +105,7 @@ int main()
 	return EXIT_SUCCESS;
 }
 
+// Produz dado
 void produce(char msg)
 {
 	unique_lock<mutex> lock(xmutex);
@@ -117,23 +120,45 @@ void produce(char msg)
 
 }
 
+// Consome dado
+void consume(int consumer_id)
+{
+	unique_lock<mutex> lock(xmutex);
+	int product;
+
+	if (is_not_empty.wait_for(lock, chrono::milliseconds(INFINITE),
+		[] { return products.size() > 0; }))
+	{
+		product = products.top();
+		products.pop();
+
+		cout << "Consumed:" << product << "\n";
+		is_not_full.notify_all();
+	}
+}
+
 DWORD WINAPI FuncPesagem(LPVOID id) 
 {	
-	char ORIGEM = '00';
-	// Cria um buffer para armazenar o horário formatado
-	char TIMESTAMP[9];  // HH:MM:SS é 8 caracteres + 1 para o null terminator
+	do {
+		char ORIGEM = '00';
+		// Cria um buffer para armazenar o horário formatado
+		char TIMESTAMP[9];  // HH:MM:SS é 8 caracteres + 1 para o null terminator
 
-	int CODIGO = rand() % 99 + 1;
+		int CODIGO = rand() % 99 + 1;
 
-	auto now = chrono::system_clock::now();
-	// Converte o tempo para time_t, que é um formato de tempo legível por humanos
-	std::time_t currentTime = chrono::system_clock::to_time_t(now);
-	// Converte time_t para tm, que é uma estrutura de tempo detalhada
-	std::tm* localTime = localtime(&currentTime);
-	// Formata e armazena o tempo local em formato HH:MM:SS no buffer
-	strftime(TIMESTAMP, sizeof(TIMESTAMP), "%H:%M:%S", localTime);
+		auto now = chrono::system_clock::now();
+		// Converte o tempo para time_t, que é um formato de tempo legível por humanos
+		std::time_t currentTime = chrono::system_clock::to_time_t(now);
+		// Converte time_t para tm, que é uma estrutura de tempo detalhada
+		std::tm* localTime = localtime(&currentTime);
+		// Formata e armazena o tempo local em formato HH:MM:SS no buffer
+		strftime(TIMESTAMP, sizeof(TIMESTAMP), "%H:%M:%S", localTime);
 
-	Sleep(1000*(rand() % 5 + 1));
+		Sleep(1000 * (rand() % 5 + 1));
+
+		produce(i);
+		i++;
+	} while (TRUE);
 }
 
 DWORD WINAPI FuncCLP(LPVOID id)
