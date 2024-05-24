@@ -17,10 +17,6 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 			printf("\nExibe Alarmes\n");
 			Sleep(500);
 		}
-		else {
-			printf("\nThread Bloqueada\n");
-			Sleep(500);
-		}
 	}
 }
 
