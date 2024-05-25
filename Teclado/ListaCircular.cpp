@@ -35,7 +35,7 @@ int j, k, m;
 
 int sizestack, sizestackA, sizestackCLP = 0;
 
-bool EstadoFuncAlarme = 0;
+bool Interruptores[4] = {0, 0, 0, 0};
 
 
 struct Node
@@ -55,6 +55,12 @@ DWORD WINAPI FuncCLPalarme(LPVOID);
 DWORD WINAPI FuncCLPdado(LPVOID);
 DWORD WINAPI FuncAlarme(LPVOID);
 DWORD WINAPI FuncDados(LPVOID);
+DWORD WINAPI FuncInterruptores(LPVOID);
+
+HANDLE hEventA = CreateEvent(NULL, FALSE, FALSE, "CapturaAlarmes");  //Reset automático e inicializa não-sinalizado
+HANDLE hEventB = CreateEvent(NULL, FALSE, FALSE, "Pesagem");
+HANDLE hEventC = CreateEvent(NULL, FALSE, FALSE, "LeituraCLP");
+HANDLE hEventD = CreateEvent(NULL, FALSE, FALSE, "CapturaDados");
 
 HANDLE hMutex1;
 HANDLE hMutexA;
@@ -152,7 +158,7 @@ void popA()
 void popCLP()
 {
 	if (isemptyCLP()) {
-		cout << "Stack CLP vazia\n";
+		//cout << "Stack CLP vazia\n";
 		sizestackCLP = 0;
 	}
 	else
@@ -221,7 +227,7 @@ int main()
 	DWORD dwThreadId;
 	DWORD dwExitCode;
 	DWORD dwRet;
-	int Alarme = 1, CLP = 2, Pesagem = 3, Dados = 4, CLPdado = 5;
+	int Alarme = 1, CLP = 2, Pesagem = 3, Dados = 4, CLPdado = 5, Interruptores = 6;
 
 	SetConsoleTitle("Processo Lista Circular");
 	cout << "Processo Lista Circular\nAperte ESC para finalizar.\n";
@@ -232,6 +238,19 @@ int main()
 
 	hEventNFull = CreateEvent(NULL, TRUE, TRUE, "EventoNFull");
 
+	//Interruptores
+	hInterruptores = (HANDLE)_beginthreadex(
+		NULL,
+		0,
+		(CAST_FUNCTION)FuncInterruptores,
+		(LPVOID)Interruptores,
+		0,
+		(CAST_LPDWORD)&dwThreadId
+	);
+	if (hThreadPesagem) printf("Thread criada Id= %0x \n", dwThreadId);
+
+
+
 	//Tarefa de leitura do sistema de pesagem
 	hThreadPesagem = (HANDLE)_beginthreadex(
 		NULL,
@@ -241,7 +260,7 @@ int main()
 		0,
 		(CAST_LPDWORD)&dwThreadId	
 	);
-	if (hThreadPesagem) printf("Thread criada Id= %0x \n", dwThreadId);
+	if (hThreadPesagem) printf("Thread Interruptores criada Id= %0x \n", dwThreadId);
 
 	//Tarefa de leitura do CLP
 	hThreadCLP = (HANDLE)_beginthreadex(
@@ -330,13 +349,13 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 		*/
 		for (int p = 0; p <= 999999; p++) {
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
-			// Secao critica
 
-			if (sizestack <= 200) {// Se nao vazia, coloca indicador 00 de alarme pesagem
+			// Secao critica
+			if (sizestack <= 200 && Interruptores[1] == 1) {// Se nao vazia, coloca indicador 00 de alarme pesagem
 				push("00");
 				if (!isempty()) {
 					showTop();
-					cout << "PESAGEM depositou a mensagem: " << topo << "\n";
+					cout << "\nPESAGEM: " << topo << "\n";
 				}
 			}
 
@@ -355,17 +374,15 @@ DWORD WINAPI FuncCLPalarme(LPVOID id)
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
 	do {
 		for (int p = 0; p <= 999999; p++) {
-			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
-			//Secao critica
 
-			if (sizestack <= 200) {// Se nao vazia, coloca indicador 55 de alarme pesagem
+			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
+			if (sizestack <= 200 && Interruptores[2] == 1) {// Se nao vazia, coloca indicador 55 de alarme pesagem
 				push("55");
 				if (!isempty()) {
 					showTop();
-					cout << "PESAGEM depositou a mensagem: " << topo << "\n";
+					cout << "\nLÊ ALARME: " << topo << "\n";
 				}
 			}
-
 			ReleaseMutex(hMutex1);
 
 			Sleep(500);
@@ -381,13 +398,12 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 	do {
 		for (int p = 0; p <= 999999; p++) {
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
-			//Secao critica
 
-			if (sizestack <= 200) {// Se nao vazia, coloca indicador 55 de alarme pesagem
+			if (sizestack <= 200 && Interruptores[2] == 1) {// Se nao vazia, coloca indicador 55 de alarme pesagem
 				push("99");
 				if (!isempty()) {
 					showTop();
-					cout << "PESAGEM depositou a mensagem: " << topo << "\n";
+					cout << "LÊ DADO: " << topo << "\n";
 				}
 			}
 
@@ -403,19 +419,19 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 DWORD WINAPI FuncAlarme(LPVOID id)
 {
 	string teste;
-	if (EstadoFuncAlarme == 1) {
 		do {
-			WaitForSingleObject(hMutexA, INFINITE);
-			if (!isemptyA()) {
-				showTopA();
-				cout << "Tarefa de captura de alarmes, capturou alarme: " << topoA << "\n";
-				popA();
+			if (Interruptores[0] == 1) {
+				WaitForSingleObject(hMutexA, INFINITE);
+				if (!isemptyA()) {
+					showTopA();
+					cout << "\nEXIBE ALARME: " << topoA << "\n\n";
+					popA();
+				}
+				ReleaseMutex(hMutexA);
 			}
-			ReleaseMutex(hMutexA);
+			Sleep(1000);
 		} while (true);
-		Sleep(1000);
 		return(0);
-	}
 }
 
 DWORD WINAPI FuncDados(LPVOID id)
@@ -424,14 +440,27 @@ DWORD WINAPI FuncDados(LPVOID id)
 
 	do {
 		WaitForSingleObject(hMutexCLP, INFINITE);
-		if (!isempty()) {
+		if (!isempty() && Interruptores[3]==1) {
 			showTopCLP();
-			cout << "Tarefa de captura de alarmes, capturou alarme: " << topoCLP << "\n";
+			cout << "\nEXIBE DADO: " << topoCLP << "\n";
 			popCLP();
 		}
 
 		ReleaseMutex(hMutexCLP);
 		Sleep(1000);
 	} while (true);
+	return(0);
+}
+
+DWORD WINAPI FuncInterruptores(LPVOID id)
+{
+	HANDLE hThreads[4] = {hEventA, hEventB, hEventC, hEventD};
+	DWORD dwRet;
+	while(true) {
+		dwRet = WaitForMultipleObjects(4, hThreads, FALSE, INFINITE); //Espera qualquer evento
+		int i = dwRet - WAIT_OBJECT_0;
+		if (Interruptores[i] == 0) Interruptores[i] = 1;
+		else Interruptores[i] = 0;
+	} 
 	return(0);
 }
