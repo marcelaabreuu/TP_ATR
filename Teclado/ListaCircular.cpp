@@ -55,7 +55,6 @@ DWORD WINAPI FuncCLPalarme(LPVOID);
 DWORD WINAPI FuncCLPdado(LPVOID);
 DWORD WINAPI FuncAlarme(LPVOID);
 DWORD WINAPI FuncDados(LPVOID);
-DWORD WINAPI FuncInterruptores(LPVOID);
 DWORD WINAPI ConsomeStackPrincipal(LPVOID);
 
 //Eventos do Teclado
@@ -81,7 +80,7 @@ HANDLE hEventNFull;
 
 HANDLE Mutexes1A[2] = { hMutex1, hMutexA };
 HANDLE Mutexes1CLP[2] = { hMutex1, hMutexCLP };
-HANDLE hThread[6] = { hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado, hThreadAUX };
+HANDLE hThread[7] = { hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado, hThreadAUX, hInterruptores };
 
 string teclado;
 
@@ -220,8 +219,6 @@ int main()
 	DWORD dwRet;
 	int Alarme = 1, CLP = 2, Pesagem = 3, Dados = 4, CLPdado = 5, iInterruptores = 6, iESC = 7, iAUX = 8;
 
-	HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, "Alarme");
-
 	SetConsoleTitle("Processo Lista Circular");
 	cout << "Processo Lista Circular\nAperte ESC para finalizar.\n";
 
@@ -230,19 +227,6 @@ int main()
 	hMutexCLP = CreateMutex(NULL, FALSE, "MutexCLP");
 
 	hEventNFull = CreateEvent(NULL, TRUE, TRUE, "EventoNFull");
-
-	//Interruptores
-	/*hInterruptores = (HANDLE)_beginthreadex(
-		NULL,
-		0,
-		(CAST_FUNCTION)FuncInterruptores,
-		(LPVOID)iInterruptores,
-		0,
-		(CAST_LPDWORD)&dwThreadId
-	);
-	if (hThreadPesagem) printf("Thread criada Id= %0x \n", dwThreadId);
-	*/
-
 
 	//Tarefa de leitura do sistema de pesagem
 	hThreadPesagem = (HANDLE)_beginthreadex(
@@ -310,32 +294,35 @@ int main()
 	);
 	if (hThreadDados) printf("Thread criada Id= %0x \n", dwThreadId);
 
-
-	//dwRet = WaitForMultipleObjects(5, hThread, TRUE, INFINITE);
 	Sleep(1000);
 
-	HANDLE hThreads[2] = { hEvent, hEventESC };
-
 	while (1) {
-		dwRet = WaitForSingleObject(hEventESC, INFINITE);
-		int i = dwRet - WAIT_OBJECT_0;
-		if (dwRet == 0) {
-			if (estado == 0) {
-				estado = 1;
+		HANDLE hEvents[5] = { hEventA, hEventB, hEventC, hEventD, hEventESC };
+		DWORD dwRet;
+		while (!Interruptores[4]) {
+			dwRet = WaitForMultipleObjects(4, hEvents, FALSE, INFINITE); //Espera qualquer evento
+			int i = dwRet - WAIT_OBJECT_0;
+			if (i != 4) {
+				if (Interruptores[i] == 0) {
+					Interruptores[i] = 1;
+					SetEvent(hInts[i]);
+					cout << "\nTAREFA " << i << "DESBLOQUEADA\n";
+				}
+				else {
+					Interruptores[i] = 0;
+					ResetEvent(hInts[i]);
+					cout << "\nTAREFA " << i << "BLOQUEADA\n";
+				}
 			}
-			else {
-				estado = 0;
-			}
+			else Interruptores[4] = 1;
 		}
-		else { ESC = 1; break; }
+
+		for (int t = 0; t < 7; ++t) {
+			GetExitCodeThread(hThread[t], &dwExitCode);
+			printf("thread %d terminou: codigo=%d\n", t, dwExitCode);
+			CloseHandle(hThread[t]);	// apaga referência ao objeto
+		}
 	}
-
-	for (int t = 0; t <= 5; ++t) {
-		GetExitCodeThread(hThread[t], &dwExitCode);
-		printf("thread %d terminou: codigo=%d\n", t, dwExitCode);
-		CloseHandle(hThread[t]);	// apaga referência ao objeto
-	}  // for 
-
 	return EXIT_SUCCESS;
 }
 
@@ -344,40 +331,18 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 {
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
 	do {
-		// Tempo corrente do PC
-		/*do {
-			char ORIGEM = '00';
-			// Cria um buffer para armazenar o horário formatado
-			char TIMESTAMP[9];  // HH:MM:SS é 8 caracteres + 1 para o null terminator
-
-			int CODIGO = rand() % 99 + 1;
-
-			auto now = chrono::system_clock::now();
-			// Converte o tempo para time_t, que é um formato de tempo legível por humanos
-			std::time_t currentTime = chrono::system_clock::to_time_t(now);
-			// Converte time_t para tm, que é uma estrutura de tempo detalhada
-			std::tm* localTime = localtime(&currentTime);
-			// Formata e armazena o tempo local em formato HH:MM:SS no buffer
-			strftime(TIMESTAMP, sizeof(TIMESTAMP), "%H:%M:%S", localTime);
-		*/
 		for (int p = 0; p <= 999999; p++) {
-
-			if (Interruptores[1] == 1) {
-				WaitForMultipleObjects(2, Events, TRUE, INFINITE);
-
-				// Secao critica
-				if (sizestack <= 200) {// Se nao vazia, coloca indicador 00 de alarme pesagem
-					push("00");
-					if (!isempty()) {
-						showTop();
-						cout << "\nPESAGEM: " << topo << "\n";
-					}
+			WaitForSingleObject(hInts[1], INFINITE); //Bloqueia se Sinalizador não-sinalizado	
+			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
+			// Secao critica
+			if (sizestack <= 200) { // Se nao vazia, coloca indicador 00 de alarme pesagem
+				push("00");
+				if (!isempty()) {
+					showTop();
+					cout << "\nPESAGEM: " << topo << "\n";
 				}
 			}
-			else if (Interruptores[1] == 0) cout << "\nPesagem bloqueada\n";
-
 			ReleaseMutex(hMutex1);
-
 			Sleep(1000 * (rand() % 5 + 1));
 		}
 	} while (!Interruptores[4]);
@@ -389,18 +354,15 @@ DWORD WINAPI FuncCLPalarme(LPVOID id)
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
 	do {
 		for (int p = 0; p <= 999999; p++) {
-
-			if (Interruptores[2] == 1) {
-				WaitForMultipleObjects(2, Events, TRUE, INFINITE);
-				if (sizestack <= 200) {// Se nao vazia, coloca indicador 55 de alarme pesagem
-					push("55");
-					if (!isempty()) {
-						showTop();
-						cout << "\nLÊ ALARME: " << topo << "\n";
-					}
+			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
+			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
+			if (sizestack <= 200) {  // Se nao vazia, coloca indicador 55 de alarme pesagem
+				push("55");
+				if (!isempty()) {
+					showTop();
+					cout << "\nLÊ ALARME: " << topo << "\n";
 				}
 			}
-			else if (Interruptores[2] == 0) cout << "\nLeitura CLP bloqueada\n";
 			ReleaseMutex(hMutex1);
 
 			Sleep(500);
@@ -414,23 +376,20 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 {
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
 	do {
+		WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
 		for (int p = 0; p <= 999999; p++) {
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
-
-			if (sizestack <= 200 && Interruptores[2] == 1) {// Se nao vazia, coloca indicador 55 de alarme pesagem
+			if (sizestack <= 200) {// Se nao vazia, coloca indicador 55 de alarme pesagem
 				push("99");
 				if (!isempty()) {
 					showTop();
 					cout << "LÊ DADO: " << topo << "\n";
 				}
 			}
-
 			ReleaseMutex(hMutex1);
-
 			Sleep(1000 * (rand() % 5 + 1));
 		}
 	} while (!Interruptores[4]);
-
 	return(0);
 }
 
@@ -438,16 +397,14 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 {
 	string teste;
 	do {
-		if (Interruptores[0] == 1) {
-			WaitForSingleObject(hMutexA, INFINITE);
-			if (!isemptyA()) {
-				showTopA();
-				cout << "\nEXIBE ALARME: " << topoA << "\n\n";
-				popA();
-			}
-			ReleaseMutex(hMutexA);
+		WaitForSingleObject(hInts[0], INFINITE); //Bloqueia se interruptor não sinalizado
+		WaitForSingleObject(hMutexA, INFINITE);
+		if (!isemptyA()) {
+			showTopA();
+			cout << "\nEXIBE ALARME: " << topoA << "\n\n";
+			popA();
 		}
-		else if (Interruptores[0] == 0) cout << "\nCaptura de Alarmes Bloqueada";
+		ReleaseMutex(hMutexA);
 		Sleep(1000);
 	} while (!Interruptores[4]);
 	return(0);
@@ -458,16 +415,14 @@ DWORD WINAPI FuncDados(LPVOID id)
 	string teste;
 
 	do {
-		if (Interruptores[3] == 1) {
-			WaitForSingleObject(hMutexCLP, INFINITE);
-			if (!isempty()) {
-				showTopCLP();
-				cout << "\nEXIBE DADO: " << topoCLP << "\n";
-				popCLP();
-			}
-			ReleaseMutex(hMutexCLP);
+		WaitForSingleObject(hInts[3], INFINITE); //Bloqueia se interruptor não sinalizado
+		WaitForSingleObject(hMutexCLP, INFINITE);
+		if (!isempty()) {
+			showTopCLP();
+			cout << "\nEXIBE DADO: " << topoCLP << "\n";
+			popCLP();
 		}
-		else if (Interruptores[3] == 0) cout << "\nCaptura de dados bloqueada\n";
+		ReleaseMutex(hMutexCLP);
 		Sleep(1000);
 	} while (!Interruptores[4]);
 	return(0);
@@ -493,30 +448,6 @@ DWORD WINAPI ConsomeStackPrincipal(LPVOID id) {
 	ReleaseMutex(hMutex1);
 	ReleaseMutex(hMutexA);
 	return (0);
-}
-
-DWORD WINAPI FuncInterruptores(LPVOID id)
-{
-	HANDLE hThreads[5] = {hEventA, hEventB, hEventC, hEventD, hEventESC};
-	DWORD dwRet;
-	while(true) {
-		dwRet = WaitForMultipleObjects(4, hThreads, FALSE, INFINITE); //Espera qualquer evento
-		int i = dwRet - WAIT_OBJECT_0;
-		if (i != 4) {
-			if (Interruptores[i] == 0) {
-				Interruptores[i] = 1;
-				SetEvent(hInts[i]);
-				cout << "\nTAREFA " << i << "DESBLOQUEADA\n";
-			}
-			else { 
-				Interruptores[i] = 0;
-				ResetEvent(hInts[i]);
-				cout << "\nTAREFA " << i << "BLOQUEADA\n";
-			}
-		}
-		else Interruptores[4] = 1;
-	}
-	return(0);
 }
 
 
