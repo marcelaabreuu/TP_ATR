@@ -21,12 +21,7 @@ using namespace std;
 #define _CHECKERROR	1	// Ativa função CheckForError
 
 
-typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
-typedef unsigned* CAST_LPDWORD;
-
-typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
-typedef unsigned* CAST_LPDWORD;
-
+// Casting para terceiro e sexto parâmetros da função _beginthreadex
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
 
@@ -39,6 +34,8 @@ const int MaxNSEQ = 999999;
 int j, k, m;
 
 int sizestack, sizestackA, sizestackCLP = 0;
+
+bool EstadoFuncAlarme = 0;
 
 
 struct Node
@@ -53,10 +50,6 @@ Node* top = NULL;
 Node* topA = NULL;
 Node* topCLP = NULL;
 
-// Casting para terceiro e sexto parâmetros da função _beginthreadex
-typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
-typedef unsigned* CAST_LPDWORD;
-
 DWORD WINAPI FuncPesagem(LPVOID);
 DWORD WINAPI FuncCLPalarme(LPVOID);
 DWORD WINAPI FuncCLPdado(LPVOID);
@@ -66,7 +59,7 @@ DWORD WINAPI FuncDados(LPVOID);
 HANDLE hMutex1;
 HANDLE hMutexA;
 HANDLE hMutexCLP;
-HANDLE hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado;
+HANDLE hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado, hInterruptores;
 HANDLE hEventNFull;
 
 HANDLE Mutexes1A[2] = { hMutex1, hMutexA };
@@ -112,7 +105,6 @@ void push(string value) {
 		sizestack++;
 	}
 }
-
 void pushA(string value) {
 	Node* ptrA = new Node();
 	ptrA->data = value;
@@ -121,7 +113,6 @@ void pushA(string value) {
 	sizestackA++;
 
 }
-
 void pushCLP(string value) {
 	Node* ptrCLP = new Node();
 	ptrCLP->data = value;
@@ -129,7 +120,6 @@ void pushCLP(string value) {
 	top = ptrCLP;
 	sizestackCLP++;
 }
-
 void pop()
 {
 	if (isempty()) {
@@ -173,12 +163,10 @@ void popCLP()
 		sizestackCLP--;
 	}
 }
-
 int getSize()
 {
 	return sizeof(top->data);
 }
-
 void showTop()
 {
 	if (!isempty()) {
@@ -237,11 +225,10 @@ int main()
 
 	SetConsoleTitle("Processo Lista Circular");
 	cout << "Processo Lista Circular\nAperte ESC para finalizar.\n";
-	//_getch();
 
 	hMutex1 = CreateMutex(NULL, FALSE, "Mutex1");
-	hMutex1 = CreateMutex(NULL, FALSE, "MutexA");
-	hMutex1 = CreateMutex(NULL, FALSE, "MutexCLP");
+	hMutexA = CreateMutex(NULL, FALSE, "MutexA");
+	hMutexCLP = CreateMutex(NULL, FALSE, "MutexCLP");
 
 	hEventNFull = CreateEvent(NULL, TRUE, TRUE, "EventoNFull");
 
@@ -249,10 +236,10 @@ int main()
 	hThreadPesagem = (HANDLE)_beginthreadex(
 		NULL,
 		0,
-		(CAST_FUNCTION)FuncPesagem,	// casting necessário
+		(CAST_FUNCTION)FuncPesagem,	
 		(LPVOID)Pesagem,
 		0,
-		(CAST_LPDWORD)&dwThreadId	// cating necessário
+		(CAST_LPDWORD)&dwThreadId	
 	);
 	if (hThreadPesagem) printf("Thread criada Id= %0x \n", dwThreadId);
 
@@ -260,10 +247,10 @@ int main()
 	hThreadCLP = (HANDLE)_beginthreadex(
 		NULL,
 		0,
-		(CAST_FUNCTION)FuncCLPalarme,	// casting necessário
+		(CAST_FUNCTION)FuncCLPalarme,	
 		(LPVOID)CLP,
 		0,
-		(CAST_LPDWORD)&dwThreadId	// cating necessário
+		(CAST_LPDWORD)&dwThreadId	
 	);
 	if (hThreadCLP) printf("Thread criada Id= %0x \n", dwThreadId);
 
@@ -271,10 +258,10 @@ int main()
 	hThreadCLPdado = (HANDLE)_beginthreadex(
 		NULL,
 		0,
-		(CAST_FUNCTION)FuncCLPdado,	// casting necessário
+		(CAST_FUNCTION)FuncCLPdado,	
 		(LPVOID)CLPdado,
 		0,
-		(CAST_LPDWORD)&dwThreadId	// cating necessário
+		(CAST_LPDWORD)&dwThreadId	
 	);
 	if (hThreadCLP) printf("Thread criada Id= %0x \n", dwThreadId);
 
@@ -416,19 +403,19 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 DWORD WINAPI FuncAlarme(LPVOID id)
 {
 	string teste;
-
-	do {
-		WaitForSingleObject(hMutexA, INFINITE);
-		if (!isemptyA()) {
-			showTopA();
-			cout << "Tarefa de captura de alarmes, capturou alarme: " << topoA << "\n";
-			popA();
-		}
-
-		ReleaseMutex(hMutexA);
-	} while (true);
-	Sleep(1000);
-	return(0);
+	if (EstadoFuncAlarme == 1) {
+		do {
+			WaitForSingleObject(hMutexA, INFINITE);
+			if (!isemptyA()) {
+				showTopA();
+				cout << "Tarefa de captura de alarmes, capturou alarme: " << topoA << "\n";
+				popA();
+			}
+			ReleaseMutex(hMutexA);
+		} while (true);
+		Sleep(1000);
+		return(0);
+	}
 }
 
 DWORD WINAPI FuncDados(LPVOID id)

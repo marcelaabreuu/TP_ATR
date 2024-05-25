@@ -23,7 +23,11 @@ int main()
 
     //handle para evento
     //Cria os eventos que acordam as threads
-    hEvent1 = CreateEvent(NULL, FALSE, FALSE, "Alarme"); //Reset automático e inicializa não-sinalizado
+    hEventA = CreateEvent(NULL, FALSE, FALSE, "CapturaAlarmes");  //Reset automático e inicializa não-sinalizado
+    hEventB = CreateEvent(NULL, FALSE, FALSE, "Pesagem");
+    hEventC = CreateEvent(NULL, FALSE, FALSE, "LeituraCLP");
+    hEventD = CreateEvent(NULL, FALSE, FALSE, "CapturaDados");
+    hEvent1 = CreateEvent(NULL, FALSE, FALSE, "Alarme");
     hEvent2 = CreateEvent(NULL, FALSE, FALSE, "Dados");
 
     ZeroMemory(&si, sizeof(si));
@@ -89,7 +93,7 @@ int main()
     
     std::cout << "Selecione:\n";
     std::cout << "a: Iniciar/Pausar captura de alarmes\n";
-    std::cout << "b: Iniciar/Pausar sistema de pesagem de alrmes\n";
+    std::cout << "b: Iniciar/Pausar sistema de pesagem\n";
     std::cout << "c: Iniciar/Pausar leitura do CLP de alrmes\n";
     std::cout << "d: Iniciar/Pausar captura de dados\n";
     std::cout << "1: Iniciar/Pausar exibição de alrmes\n";
@@ -109,6 +113,8 @@ int main()
             SetEvent(hEvent2);
             break;
         }
+        case 'a':
+
         
     } while (action != ESC);
 
