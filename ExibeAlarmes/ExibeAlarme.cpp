@@ -4,10 +4,15 @@
 #include <iostream>
 #include <process.h>	
 #include <conio.h>  // _getch
+#define _CHECKERROR	1	// Ativa função CheckForError
+#include "CheckForError.h"
+#include <tchar.h>
 
 using namespace std;
 
+HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, "Alarme");
 HANDLE hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
+HANDLE hInterruptor = CreateEvent(NULL, TRUE, FALSE, "InterruptorA");
 
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
@@ -15,53 +20,58 @@ bool estado = 0, ESC = 0;
 
 DWORD WINAPI ThreadFunc(LPVOID index)
 {
-	while (1)
+	while (!ESC)
 	{
-		if (ESC == 0) {
-			if (estado == 1) cout << "\nExibe Alarmes\n";
-			else cout << "\nExibe Alarmes: Bloqueado\n";
-			Sleep(500);
-		}
-		else _endthreadex(0);
+		WaitForSingleObject(hInterruptor, INFINITE);
+		cout << "\nEXIBE ALARMES\n";
+		Sleep(500);
 	}
+	return(0);
 }
 
-HANDLE hEvent;
-
-int main() 
+int main()
 {
 	SetConsoleTitle("Console Alarmes");
-	hEvent = CreateEvent(NULL, FALSE, FALSE, "Alarme");
 	HANDLE hThread;
 	DWORD dwThreadId;
-	int i=0;
-	hThread = (HANDLE) _beginthreadex(
+	int i = 0;
+	hThread = (HANDLE)_beginthreadex(
 		NULL,
 		0,
 		(CAST_FUNCTION)ThreadFunc,
 		(LPVOID)i,
 		0,
-		(CAST_LPDWORD)&dwThreadId	
+		(CAST_LPDWORD)&dwThreadId
 	);
 
 	Sleep(500);
 
 	DWORD ret;
-	HANDLE hThreads[2] = { hEvent, hEventESC };
+	HANDLE hEvents[2] = { hEvent, hEventESC };
 
 	while (1) {
-		ret = WaitForMultipleObjects(2, hThreads, FALSE, INFINITE);
+		ret = WaitForMultipleObjects(2, hEvents, FALSE, INFINITE);
 		int i = ret - WAIT_OBJECT_0;
 		if (ret == 0) {
 			if (estado == 0) {
 				estado = 1;
+				SetEvent(hInterruptor);
+				cout << "\nTarefa desbloqueada\n";
 			}
 			else {
 				estado = 0;
+				ResetEvent(hInterruptor);
+				cout << "\nTarefa bloqueada\n";
 			}
 		}
 		else { ESC = 1; break; }
 	}
+
+	CloseHandle(hInterruptor);
+	CloseHandle(hEvent);
+	CloseHandle(hEventESC);
+	CloseHandle(hEvents);
+	CloseHandle(hThread);
 	return EXIT_SUCCESS;
 }
 

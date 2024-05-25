@@ -35,7 +35,7 @@ int j, k, m;
 
 int sizestack, sizestackA, sizestackCLP = 0;
 
-bool Interruptores[5] = {0, 0, 0, 0, 0};  //Interruptores[4] = ESC
+bool Interruptores[5] = { 0, 0, 0, 0, 0 };  //Interruptores[4] = ESC
 
 
 struct Node
@@ -56,22 +56,32 @@ DWORD WINAPI FuncCLPdado(LPVOID);
 DWORD WINAPI FuncAlarme(LPVOID);
 DWORD WINAPI FuncDados(LPVOID);
 DWORD WINAPI FuncInterruptores(LPVOID);
+DWORD WINAPI ConsomeStackPrincipal(LPVOID);
 
+//Eventos do Teclado
 HANDLE hEventA = CreateEvent(NULL, FALSE, FALSE, "CapturaAlarmes");  //Reset automático e inicializa não-sinalizado
 HANDLE hEventB = CreateEvent(NULL, FALSE, FALSE, "Pesagem");
 HANDLE hEventC = CreateEvent(NULL, FALSE, FALSE, "LeituraCLP");
 HANDLE hEventD = CreateEvent(NULL, FALSE, FALSE, "CapturaDados");
+
+//Eventos Interruptores
+HANDLE hIntA = CreateEvent(NULL, TRUE, FALSE, "IntA");
+HANDLE hIntB = CreateEvent(NULL, TRUE, FALSE, "IntB");
+HANDLE hIntC = CreateEvent(NULL, TRUE, FALSE, "IntC");
+HANDLE hIntD = CreateEvent(NULL, TRUE, FALSE, "IntD");
+HANDLE hInts[4] = {hIntA, hIntB, hIntC, hIntD};
+
 HANDLE hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
 
 HANDLE hMutex1;
 HANDLE hMutexA;
 HANDLE hMutexCLP;
-HANDLE hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado, hInterruptores, hThreadESC;
+HANDLE hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado, hInterruptores, hThreadESC, hThreadAUX;
 HANDLE hEventNFull;
 
 HANDLE Mutexes1A[2] = { hMutex1, hMutexA };
 HANDLE Mutexes1CLP[2] = { hMutex1, hMutexCLP };
-HANDLE hThread[5] = { hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado };
+HANDLE hThread[6] = { hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado, hThreadAUX };
 
 string teclado;
 
@@ -197,27 +207,7 @@ void showTopCLP()
 	}
 }
 
-// Consome Stack principal e deposita nas respectivas stacks de alarme de pesagem ou clp
-void ConsomeStackPrincipal() {
-
-	WaitForMultipleObjects(2, Mutexes1A, TRUE, INFINITE);
-
-	if (!isempty()) {
-		showTop();
-		if (topo == "00") {
-			pushA(topo);
-			pop();
-		}
-		else if (topo == "55" || topo == "99") {
-			pushCLP(topo);
-			pop();
-		}
-	}
-
-	ReleaseMutex(hMutex1);
-	ReleaseMutex(hMutexA);
-
-}
+bool estado = 0, ESC = 0;
 
 int main()
 {
@@ -228,7 +218,9 @@ int main()
 	DWORD dwThreadId;
 	DWORD dwExitCode;
 	DWORD dwRet;
-	int Alarme = 1, CLP = 2, Pesagem = 3, Dados = 4, CLPdado = 5, iInterruptores = 6, iESC = 7;
+	int Alarme = 1, CLP = 2, Pesagem = 3, Dados = 4, CLPdado = 5, iInterruptores = 6, iESC = 7, iAUX = 8;
+
+	HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, "Alarme");
 
 	SetConsoleTitle("Processo Lista Circular");
 	cout << "Processo Lista Circular\nAperte ESC para finalizar.\n";
@@ -240,7 +232,7 @@ int main()
 	hEventNFull = CreateEvent(NULL, TRUE, TRUE, "EventoNFull");
 
 	//Interruptores
-	hInterruptores = (HANDLE)_beginthreadex(
+	/*hInterruptores = (HANDLE)_beginthreadex(
 		NULL,
 		0,
 		(CAST_FUNCTION)FuncInterruptores,
@@ -249,17 +241,17 @@ int main()
 		(CAST_LPDWORD)&dwThreadId
 	);
 	if (hThreadPesagem) printf("Thread criada Id= %0x \n", dwThreadId);
-
+	*/
 
 
 	//Tarefa de leitura do sistema de pesagem
 	hThreadPesagem = (HANDLE)_beginthreadex(
 		NULL,
 		0,
-		(CAST_FUNCTION)FuncPesagem,	
+		(CAST_FUNCTION)FuncPesagem,
 		(LPVOID)Pesagem,
 		0,
-		(CAST_LPDWORD)&dwThreadId	
+		(CAST_LPDWORD)&dwThreadId
 	);
 	if (hThreadPesagem) printf("Thread Interruptores criada Id= %0x \n", dwThreadId);
 
@@ -267,10 +259,10 @@ int main()
 	hThreadCLP = (HANDLE)_beginthreadex(
 		NULL,
 		0,
-		(CAST_FUNCTION)FuncCLPalarme,	
+		(CAST_FUNCTION)FuncCLPalarme,
 		(LPVOID)CLP,
 		0,
-		(CAST_LPDWORD)&dwThreadId	
+		(CAST_LPDWORD)&dwThreadId
 	);
 	if (hThreadCLP) printf("Thread criada Id= %0x \n", dwThreadId);
 
@@ -278,10 +270,10 @@ int main()
 	hThreadCLPdado = (HANDLE)_beginthreadex(
 		NULL,
 		0,
-		(CAST_FUNCTION)FuncCLPdado,	
+		(CAST_FUNCTION)FuncCLPdado,
 		(LPVOID)CLPdado,
 		0,
-		(CAST_LPDWORD)&dwThreadId	
+		(CAST_LPDWORD)&dwThreadId
 	);
 	if (hThreadCLP) printf("Thread criada Id= %0x \n", dwThreadId);
 
@@ -307,20 +299,42 @@ int main()
 	);
 	if (hThreadDados) printf("Thread criada Id= %0x \n", dwThreadId);
 
-	do {
-		ConsomeStackPrincipal();
-		Sleep(1000);
-	} while (!Interruptores[4]);
+	//Tarefa AUX
+	hThreadAUX = (HANDLE)_beginthreadex(
+		NULL,
+		0,
+		(CAST_FUNCTION)ConsomeStackPrincipal,	// casting necessário
+		(LPVOID)iAUX,
+		0,
+		(CAST_LPDWORD)&dwThreadId	// cating necessário
+	);
+	if (hThreadDados) printf("Thread criada Id= %0x \n", dwThreadId);
 
-	dwRet = WaitForMultipleObjects(5, hThread, TRUE, INFINITE);
 
-	for (int t = 0; t <= 4; ++t) {
+	//dwRet = WaitForMultipleObjects(5, hThread, TRUE, INFINITE);
+	Sleep(1000);
+
+	HANDLE hThreads[2] = { hEvent, hEventESC };
+
+	while (1) {
+		dwRet = WaitForSingleObject(hEventESC, INFINITE);
+		int i = dwRet - WAIT_OBJECT_0;
+		if (dwRet == 0) {
+			if (estado == 0) {
+				estado = 1;
+			}
+			else {
+				estado = 0;
+			}
+		}
+		else { ESC = 1; break; }
+	}
+
+	for (int t = 0; t <= 5; ++t) {
 		GetExitCodeThread(hThread[t], &dwExitCode);
 		printf("thread %d terminou: codigo=%d\n", t, dwExitCode);
 		CloseHandle(hThread[t]);	// apaga referência ao objeto
 	}  // for 
-
-	cout << "\nAcione uma tecla para terminar\n";
 
 	return EXIT_SUCCESS;
 }
@@ -423,20 +437,20 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 DWORD WINAPI FuncAlarme(LPVOID id)
 {
 	string teste;
-		do {
-			if (Interruptores[0] == 1) {
-				WaitForSingleObject(hMutexA, INFINITE);
-				if (!isemptyA()) {
-					showTopA();
-					cout << "\nEXIBE ALARME: " << topoA << "\n\n";
-					popA();
-				}
-				ReleaseMutex(hMutexA);
+	do {
+		if (Interruptores[0] == 1) {
+			WaitForSingleObject(hMutexA, INFINITE);
+			if (!isemptyA()) {
+				showTopA();
+				cout << "\nEXIBE ALARME: " << topoA << "\n\n";
+				popA();
 			}
-			else if (Interruptores[0] == 0) cout << "\nCaptura de Alarmes Bloqueada";
-			Sleep(1000);
-		} while (!Interruptores[4]);
-		return(0);
+			ReleaseMutex(hMutexA);
+		}
+		else if (Interruptores[0] == 0) cout << "\nCaptura de Alarmes Bloqueada";
+		Sleep(1000);
+	} while (!Interruptores[4]);
+	return(0);
 }
 
 DWORD WINAPI FuncDados(LPVOID id)
@@ -459,6 +473,28 @@ DWORD WINAPI FuncDados(LPVOID id)
 	return(0);
 }
 
+// Consome Stack principal e deposita nas respectivas stacks de alarme de pesagem ou clp
+DWORD WINAPI ConsomeStackPrincipal(LPVOID id) {
+
+	WaitForMultipleObjects(2, Mutexes1A, TRUE, INFINITE);
+
+	if (!isempty()) {
+		showTop();
+		if (topo == "55" || topo == "00") {
+			pushA(topo);
+			pop();
+		}
+		else if (topo == "99") {
+			pushCLP(topo);
+			pop();
+		}
+	}
+
+	ReleaseMutex(hMutex1);
+	ReleaseMutex(hMutexA);
+	return (0);
+}
+
 DWORD WINAPI FuncInterruptores(LPVOID id)
 {
 	HANDLE hThreads[5] = {hEventA, hEventB, hEventC, hEventD, hEventESC};
@@ -467,10 +503,21 @@ DWORD WINAPI FuncInterruptores(LPVOID id)
 		dwRet = WaitForMultipleObjects(4, hThreads, FALSE, INFINITE); //Espera qualquer evento
 		int i = dwRet - WAIT_OBJECT_0;
 		if (i != 4) {
-			if (Interruptores[i] == 0) Interruptores[i] = 1;
-			else Interruptores[i] = 0;
+			if (Interruptores[i] == 0) {
+				Interruptores[i] = 1;
+				SetEvent(hInts[i]);
+				cout << "\nTAREFA " << i << "DESBLOQUEADA\n";
+			}
+			else { 
+				Interruptores[i] = 0;
+				ResetEvent(hInts[i]);
+				cout << "\nTAREFA " << i << "BLOQUEADA\n";
+			}
 		}
 		else Interruptores[4] = 1;
-	} 
+	}
 	return(0);
 }
+
+
+

@@ -11,6 +11,7 @@
 using namespace std;
 
 HANDLE hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
+HANDLE hInterruptor = CreateEvent(NULL, TRUE, FALSE, "InterruptorD");
 
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
@@ -20,11 +21,11 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 {
 	while (!ESC)
 	{
-		if (estado == 1) cout << "\nExibe Dados\n";
-		else cout << "\nExibe Dados: Bloqueado\n";
+		WaitForSingleObject(hInterruptor, INFINITE);
+		cout << "\nEXIBE DADOS\n";
 		Sleep(500);
 	}
-	_endthreadex(0);
+	return(0);
 }
 
 HANDLE hEvent;
@@ -48,20 +49,30 @@ int main()
 	Sleep(500);
 
 	DWORD ret;
-	HANDLE hThreads[2] = { hEvent, hEventESC };
+	HANDLE hEvents[2] = { hEvent, hEventESC };
 
 	while (1) {
-		ret = WaitForMultipleObjects(2, hThreads,FALSE,INFINITE);
+		ret = WaitForMultipleObjects(2, hEvents, FALSE, INFINITE);
 		int i = ret - WAIT_OBJECT_0;
 		if (ret == 0) {
 			if (estado == 0) {
 				estado = 1;
+				SetEvent(hInterruptor);
+				cout << "\nTarefa desbloqueada\n";
 			}
 			else {
 				estado = 0;
+				ResetEvent(hInterruptor);
+				cout << "\nTarefa bloqueada\n";
 			}
 		}
 		else { ESC = 1; break; }
 	}
+
+	CloseHandle(hInterruptor);
+	CloseHandle(hEvent);
+	CloseHandle(hEventESC);
+	CloseHandle(hEvents);
+	CloseHandle(hThread);
 	return EXIT_SUCCESS;
 }
