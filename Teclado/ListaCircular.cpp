@@ -358,6 +358,7 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 					cout << "\nPESAGEM: " << topo << "\n";
 				}
 			}
+			else if (Interruptores[1] == 0) cout << "\nPesagem bloqueada\n";
 
 			ReleaseMutex(hMutex1);
 
@@ -383,6 +384,7 @@ DWORD WINAPI FuncCLPalarme(LPVOID id)
 					cout << "\nLÊ ALARME: " << topo << "\n";
 				}
 			}
+			else if (Interruptores[2] == 0) cout << "\nLeitura CLP bloqueada\n";
 			ReleaseMutex(hMutex1);
 
 			Sleep(500);
@@ -429,6 +431,7 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 				}
 				ReleaseMutex(hMutexA);
 			}
+			else if (Interruptores[0] == 0) cout << "\nCaptura de Alarmes Bloqueada";
 			Sleep(1000);
 		} while (true);
 		return(0);
@@ -445,6 +448,7 @@ DWORD WINAPI FuncDados(LPVOID id)
 			cout << "\nEXIBE DADO: " << topoCLP << "\n";
 			popCLP();
 		}
+		else if (Interruptores[3] == 0) cout << "\nCaptura de dados bloqueada\n";
 
 		ReleaseMutex(hMutexCLP);
 		Sleep(1000);

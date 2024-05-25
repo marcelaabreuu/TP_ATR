@@ -5,6 +5,8 @@
 #include <process.h>	
 #include <conio.h>  // _getch
 
+using namespace std;
+
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
 bool estado = 0;
@@ -13,10 +15,9 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 {
 	while (1)
 	{
-		if (estado == 1) {
-			printf("\nExibe Alarmes\n");
-			Sleep(500);
-		}
+		if (estado == 1) cout << "\nExibe Alarmes\n";
+		else cout << "\nExibe Alarmes: Bloqueado\n";
+		Sleep(500);
 	}
 }
 

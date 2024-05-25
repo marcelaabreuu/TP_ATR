@@ -8,6 +8,8 @@
 #include "CheckForError.h"
 #include <tchar.h>
 
+using namespace std;
+
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
 bool estado = 0;
@@ -16,10 +18,9 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 {
 	while (1)
 	{
-		if (estado == 1) {
-			printf("\nExibe Dados\n");
-			Sleep(500);
-		}
+		if (estado == 1) cout << "\nExibe Dados\n";
+		else cout << "\nExibe Dados: Bloqueado\n"; 
+		Sleep(500);
 	}
 }
 
