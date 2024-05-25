@@ -348,14 +348,17 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 			strftime(TIMESTAMP, sizeof(TIMESTAMP), "%H:%M:%S", localTime);
 		*/
 		for (int p = 0; p <= 999999; p++) {
-			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 
-			// Secao critica
-			if (sizestack <= 200 && Interruptores[1] == 1) {// Se nao vazia, coloca indicador 00 de alarme pesagem
-				push("00");
-				if (!isempty()) {
-					showTop();
-					cout << "\nPESAGEM: " << topo << "\n";
+			if (Interruptores[1] == 1) {
+				WaitForMultipleObjects(2, Events, TRUE, INFINITE);
+
+				// Secao critica
+				if (sizestack <= 200) {// Se nao vazia, coloca indicador 00 de alarme pesagem
+					push("00");
+					if (!isempty()) {
+						showTop();
+						cout << "\nPESAGEM: " << topo << "\n";
+					}
 				}
 			}
 			else if (Interruptores[1] == 0) cout << "\nPesagem bloqueada\n";
@@ -376,12 +379,14 @@ DWORD WINAPI FuncCLPalarme(LPVOID id)
 	do {
 		for (int p = 0; p <= 999999; p++) {
 
-			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
-			if (sizestack <= 200 && Interruptores[2] == 1) {// Se nao vazia, coloca indicador 55 de alarme pesagem
-				push("55");
-				if (!isempty()) {
-					showTop();
-					cout << "\nLÊ ALARME: " << topo << "\n";
+			if (Interruptores[2] == 1) {
+				WaitForMultipleObjects(2, Events, TRUE, INFINITE);
+				if (sizestack <= 200) {// Se nao vazia, coloca indicador 55 de alarme pesagem
+					push("55");
+					if (!isempty()) {
+						showTop();
+						cout << "\nLÊ ALARME: " << topo << "\n";
+					}
 				}
 			}
 			else if (Interruptores[2] == 0) cout << "\nLeitura CLP bloqueada\n";
@@ -442,15 +447,16 @@ DWORD WINAPI FuncDados(LPVOID id)
 	string teste;
 
 	do {
-		WaitForSingleObject(hMutexCLP, INFINITE);
-		if (!isempty() && Interruptores[3]==1) {
-			showTopCLP();
-			cout << "\nEXIBE DADO: " << topoCLP << "\n";
-			popCLP();
+		if (Interruptores[3] == 1) {
+			WaitForSingleObject(hMutexCLP, INFINITE);
+			if (!isempty()) {
+				showTopCLP();
+				cout << "\nEXIBE DADO: " << topoCLP << "\n";
+				popCLP();
+			}
+			ReleaseMutex(hMutexCLP);
 		}
 		else if (Interruptores[3] == 0) cout << "\nCaptura de dados bloqueada\n";
-
-		ReleaseMutex(hMutexCLP);
 		Sleep(1000);
 	} while (true);
 	return(0);
