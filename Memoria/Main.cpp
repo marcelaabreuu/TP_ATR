@@ -33,11 +33,8 @@ int main()
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);  // Tamanho da estrutura em bytes
     ZeroMemory(&NewProcess, sizeof(NewProcess));
-    // Processo de leitura de teclado
-
-
    
-
+    //ListaCircular
     status = CreateProcess(
         "..\\x64\\Debug\\ListaCircular.exe",         // Caminho do arquivo executável
         NULL,                // Apontador p/ parâmetros de linha de comando
@@ -94,7 +91,7 @@ int main()
     std::cout << "Selecione:\n";
     std::cout << "a: Iniciar/Pausar captura de alarmes\n";
     std::cout << "b: Iniciar/Pausar sistema de pesagem\n";
-    std::cout << "c: Iniciar/Pausar leitura do CLP de alrmes\n";
+    std::cout << "c: Iniciar/Pausar leitura do CLP\n";
     std::cout << "d: Iniciar/Pausar captura de dados\n";
     std::cout << "1: Iniciar/Pausar exibição de alrmes\n";
     std::cout << "2: Iniciar/Pausar exibição de dados\n";
@@ -103,10 +100,10 @@ int main()
 
     do {
         action = _getch();
+        std::cout << "\nFoi selecionado: " << action << std::endl;
         
         switch (action) {
         case '1':
-            std::cout << "\nFoi selecionado: " << action << std::endl;
             SetEvent(hEvent1);
             break;
         case '2':
