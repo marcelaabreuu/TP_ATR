@@ -10,26 +10,29 @@
 
 using namespace std;
 
+HANDLE hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
+
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
-bool estado = 0;
+bool estado = 0, ESC = 0;
 
 DWORD WINAPI ThreadFunc(LPVOID index)
 {
-	while (1)
+	while (!ESC)
 	{
 		if (estado == 1) cout << "\nExibe Dados\n";
-		else cout << "\nExibe Dados: Bloqueado\n"; 
+		else cout << "\nExibe Dados: Bloqueado\n";
 		Sleep(500);
 	}
+	_endthreadex(0);
 }
 
-HANDLE hEvent2;
+HANDLE hEvent;
 
 int main()
 {
 	SetConsoleTitle("Console Dados");
-	hEvent2 = CreateEvent(NULL, FALSE, FALSE, "Dados");
+	hEvent = CreateEvent(NULL, FALSE, FALSE, "Dados");
 	HANDLE hThread;
 	DWORD dwThreadId;
 	int i = 0;
@@ -45,15 +48,20 @@ int main()
 	Sleep(500);
 
 	DWORD ret;
+	HANDLE hThreads[2] = { hEvent, hEventESC };
 
 	while (1) {
-		ret = WaitForSingleObject(hEvent2, INFINITE);
-		if (estado == 0) {
-			estado = 1;
+		ret = WaitForMultipleObjects(2, hThreads,FALSE,INFINITE);
+		int i = ret - WAIT_OBJECT_0;
+		if (ret == 0) {
+			if (estado == 0) {
+				estado = 1;
+			}
+			else {
+				estado = 0;
+			}
 		}
-		else {
-			estado = 0;
-		}
+		else { ESC = 1; break; }
 	}
 	return EXIT_SUCCESS;
 }

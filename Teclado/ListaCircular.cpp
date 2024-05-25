@@ -35,7 +35,7 @@ int j, k, m;
 
 int sizestack, sizestackA, sizestackCLP = 0;
 
-bool Interruptores[4] = {0, 0, 0, 0};
+bool Interruptores[5] = {0, 0, 0, 0, 0};  //Interruptores[4] = ESC
 
 
 struct Node
@@ -61,11 +61,12 @@ HANDLE hEventA = CreateEvent(NULL, FALSE, FALSE, "CapturaAlarmes");  //Reset aut
 HANDLE hEventB = CreateEvent(NULL, FALSE, FALSE, "Pesagem");
 HANDLE hEventC = CreateEvent(NULL, FALSE, FALSE, "LeituraCLP");
 HANDLE hEventD = CreateEvent(NULL, FALSE, FALSE, "CapturaDados");
+HANDLE hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
 
 HANDLE hMutex1;
 HANDLE hMutexA;
 HANDLE hMutexCLP;
-HANDLE hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado, hInterruptores;
+HANDLE hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado, hInterruptores, hThreadESC;
 HANDLE hEventNFull;
 
 HANDLE Mutexes1A[2] = { hMutex1, hMutexA };
@@ -227,7 +228,7 @@ int main()
 	DWORD dwThreadId;
 	DWORD dwExitCode;
 	DWORD dwRet;
-	int Alarme = 1, CLP = 2, Pesagem = 3, Dados = 4, CLPdado = 5, Interruptores = 6;
+	int Alarme = 1, CLP = 2, Pesagem = 3, Dados = 4, CLPdado = 5, iInterruptores = 6, iESC = 7;
 
 	SetConsoleTitle("Processo Lista Circular");
 	cout << "Processo Lista Circular\nAperte ESC para finalizar.\n";
@@ -243,7 +244,7 @@ int main()
 		NULL,
 		0,
 		(CAST_FUNCTION)FuncInterruptores,
-		(LPVOID)Interruptores,
+		(LPVOID)iInterruptores,
 		0,
 		(CAST_LPDWORD)&dwThreadId
 	);
@@ -305,15 +306,13 @@ int main()
 		(CAST_LPDWORD)&dwThreadId	// cating necessário
 	);
 	if (hThreadDados) printf("Thread criada Id= %0x \n", dwThreadId);
-	dwRet = WaitForMultipleObjects(5, hThread, TRUE, INFINITE);
 
 	do {
 		ConsomeStackPrincipal();
 		Sleep(1000);
-		cout << "Digite 0 para parar execução:\n";
-		teclado = _getch();
+	} while (!Interruptores[4]);
 
-	} while (teclado != "0");
+	dwRet = WaitForMultipleObjects(5, hThread, TRUE, INFINITE);
 
 	for (int t = 0; t <= 4; ++t) {
 		GetExitCodeThread(hThread[t], &dwExitCode);
@@ -367,10 +366,8 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 
 			Sleep(1000 * (rand() % 5 + 1));
 		}
-	} while (true);
+	} while (!Interruptores[4]);
 	return(0);
-
-
 }
 
 DWORD WINAPI FuncCLPalarme(LPVOID id)
@@ -394,7 +391,7 @@ DWORD WINAPI FuncCLPalarme(LPVOID id)
 
 			Sleep(500);
 		}
-	} while (true);
+	} while (!Interruptores[4]);
 
 	return(0);
 }
@@ -418,7 +415,7 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 
 			Sleep(1000 * (rand() % 5 + 1));
 		}
-	} while (true);
+	} while (!Interruptores[4]);
 
 	return(0);
 }
@@ -438,7 +435,7 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 			}
 			else if (Interruptores[0] == 0) cout << "\nCaptura de Alarmes Bloqueada";
 			Sleep(1000);
-		} while (true);
+		} while (!Interruptores[4]);
 		return(0);
 }
 
@@ -458,19 +455,22 @@ DWORD WINAPI FuncDados(LPVOID id)
 		}
 		else if (Interruptores[3] == 0) cout << "\nCaptura de dados bloqueada\n";
 		Sleep(1000);
-	} while (true);
+	} while (!Interruptores[4]);
 	return(0);
 }
 
 DWORD WINAPI FuncInterruptores(LPVOID id)
 {
-	HANDLE hThreads[4] = {hEventA, hEventB, hEventC, hEventD};
+	HANDLE hThreads[5] = {hEventA, hEventB, hEventC, hEventD, hEventESC};
 	DWORD dwRet;
 	while(true) {
 		dwRet = WaitForMultipleObjects(4, hThreads, FALSE, INFINITE); //Espera qualquer evento
 		int i = dwRet - WAIT_OBJECT_0;
-		if (Interruptores[i] == 0) Interruptores[i] = 1;
-		else Interruptores[i] = 0;
+		if (i != 4) {
+			if (Interruptores[i] == 0) Interruptores[i] = 1;
+			else Interruptores[i] = 0;
+		}
+		else Interruptores[4] = 1;
 	} 
 	return(0);
 }

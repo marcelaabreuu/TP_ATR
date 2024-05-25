@@ -8,9 +8,7 @@
 
 #define	ESC			0x1B
 
-HANDLE hEventA, hEventB, hEventC, hEventD;
-HANDLE hEvent1; 
-HANDLE hEvent2;
+HANDLE hEventA, hEventB, hEventC, hEventD, hEvent1, hEvent2, hEventESC;
 
 int main()
 {
@@ -29,6 +27,7 @@ int main()
     hEventD = CreateEvent(NULL, FALSE, FALSE, "CapturaDados");
     hEvent1 = CreateEvent(NULL, FALSE, FALSE, "Alarme");
     hEvent2 = CreateEvent(NULL, FALSE, FALSE, "Dados");
+    hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
 
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);  // Tamanho da estrutura em bytes
@@ -124,8 +123,11 @@ int main()
         }
     } while (action != ESC);
 
+    SetEvent(hEventESC);
+
     // Fechar handles dos processos
     for (int i = 0; i < 3; i++) {
+        
         CloseHandle(NewProcess[i].hProcess);
     }
 
