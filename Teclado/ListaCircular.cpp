@@ -306,12 +306,12 @@ int main()
 				if (Interruptores[i] == 0) {
 					Interruptores[i] = 1;
 					SetEvent(hInts[i]);
-					cout << "\nTAREFA " << i << "DESBLOQUEADA\n";
+					cout << "\nTAREFA " << i << " DESBLOQUEADA\n";
 				}
 				else {
 					Interruptores[i] = 0;
 					ResetEvent(hInts[i]);
-					cout << "\nTAREFA " << i << "BLOQUEADA\n";
+					cout << "\nTAREFA " << i << " BLOQUEADA\n";
 				}
 			}
 			else Interruptores[4] = 1;
@@ -353,22 +353,20 @@ DWORD WINAPI FuncCLPalarme(LPVOID id)
 {
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
 	do {
-		for (int p = 0; p <= 999999; p++) {
+		for (int p = 0; p <= 999999 && !Interruptores[4]; p++) {
 			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			if (sizestack <= 200) {  // Se nao vazia, coloca indicador 55 de alarme pesagem
 				push("55");
 				if (!isempty()) {
 					showTop();
-					cout << "\nLÊ ALARME: " << topo << "\n";
+					cout << "\nLE ALARME: " << topo << "\n";
 				}
 			}
 			ReleaseMutex(hMutex1);
-
 			Sleep(500);
 		}
 	} while (!Interruptores[4]);
-
 	return(0);
 }
 
@@ -376,14 +374,14 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 {
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
 	do {
-		WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
-		for (int p = 0; p <= 999999; p++) {
+		for (int p = 0; p <= 999999 && !Interruptores[4]; p++) {
+			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			if (sizestack <= 200) {// Se nao vazia, coloca indicador 55 de alarme pesagem
 				push("99");
 				if (!isempty()) {
 					showTop();
-					cout << "LÊ DADO: " << topo << "\n";
+					cout << "LE DADO: " << topo << "\n";
 				}
 			}
 			ReleaseMutex(hMutex1);
