@@ -112,10 +112,19 @@ int main()
         case '2':
             SetEvent(hEvent2);
             break;
-        }
         case 'a':
-
-        
+            SetEvent(hEventA);
+            break;
+        case 'b':
+            SetEvent(hEventB);
+            break;
+        case 'c':
+            SetEvent(hEventC);
+            break;
+        case 'd':
+            SetEvent(hEventD);
+            break;
+        }
     } while (action != ESC);
 
     // Fechar handles dos processos
