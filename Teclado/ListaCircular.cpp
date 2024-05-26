@@ -234,7 +234,6 @@ int main()
 		0,
 		(CAST_LPDWORD)&dwThreadId
 	);
-	if (hThreadPesagem) printf("Thread Interruptores criada Id= %0x \n", dwThreadId);
 
 	//Tarefa de leitura do CLP
 	hThreadCLP = (HANDLE)_beginthreadex(
@@ -245,7 +244,6 @@ int main()
 		0,
 		(CAST_LPDWORD)&dwThreadId
 	);
-	if (hThreadCLP) printf("Thread criada Id= %0x \n", dwThreadId);
 
 	//Tarefa de leitura do CLP
 	hThreadCLPdado = (HANDLE)_beginthreadex(
@@ -256,7 +254,6 @@ int main()
 		0,
 		(CAST_LPDWORD)&dwThreadId
 	);
-	if (hThreadCLP) printf("Thread criada Id= %0x \n", dwThreadId);
 
 	//Tarefa de captura de alarmes
 	hThreadAlarme = (HANDLE)_beginthreadex(
@@ -267,7 +264,6 @@ int main()
 		0,
 		(CAST_LPDWORD)&dwThreadId	// cating necessário
 	);
-	if (hThreadAlarme) printf("Thread criada Id= %0x \n", dwThreadId);
 
 	//Tarefa de captura de dados
 	hThreadDados = (HANDLE)_beginthreadex(
@@ -278,7 +274,6 @@ int main()
 		0,
 		(CAST_LPDWORD)&dwThreadId	// cating necessário
 	);
-	if (hThreadDados) printf("Thread criada Id= %0x \n", dwThreadId);
 
 	//Tarefa AUX
 	hThreadAUX = (HANDLE)_beginthreadex(
@@ -289,15 +284,14 @@ int main()
 		0,
 		(CAST_LPDWORD)&dwThreadId	// cating necessário
 	);
-	if (hThreadDados) printf("Thread criada Id= %0x \n", dwThreadId);
 
 	Sleep(1000);
 
 
 		HANDLE hEvents[5] = { hEventA, hEventB, hEventC, hEventD, hEventESC };
 		DWORD Ret;
-		while (!Interruptores[4]) {
-			Ret = WaitForMultipleObjects(4, hEvents, FALSE, INFINITE); //Espera qualquer evento
+		while (1) {
+			Ret = WaitForMultipleObjects(5, hEvents, FALSE, INFINITE); //Espera qualquer evento
 			int i = Ret - WAIT_OBJECT_0;
 			if (i != 4) {
 				if (Interruptores[i] == 0) {
@@ -311,7 +305,14 @@ int main()
 					cout << "\nTAREFA " << i << " BLOQUEADA\n";
 				}
 			}
-			else Interruptores[4] = 1;
+			else { 
+				Interruptores[4] = 1; 
+				for (int j = 0; j < 4; j++) { //Reseta todos os interruptores
+					ResetEvent(hInts[j]);
+				}
+				WaitForMultipleObjects(4, hInts, TRUE, INFINITE);
+				break;
+			}
 		}
 
 		for (int t = 0; t < 7; ++t) {
@@ -360,6 +361,7 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 			Sleep(1000 * (rand() % 5 + 1));
 		}
 	} while (!Interruptores[4]);
+	_endthreadex(0);
 	return(0);
 }
 
@@ -381,6 +383,7 @@ DWORD WINAPI FuncCLPalarme(LPVOID id)
 			Sleep(500);
 		}
 	} while (!Interruptores[4]);
+	_endthreadex(0);
 	return(0);
 }
 
@@ -402,6 +405,7 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 			Sleep(1000 * (rand() % 5 + 1));
 		}
 	} while (!Interruptores[4]);
+	_endthreadex(0);
 	return(0);
 }
 
@@ -419,6 +423,7 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 		ReleaseMutex(hMutexA);
 		Sleep(1000);
 	} while (!Interruptores[4]);
+	_endthreadex(0);
 	return(0);
 }
 
@@ -437,6 +442,7 @@ DWORD WINAPI FuncDados(LPVOID id)
 		ReleaseMutex(hMutexCLP);
 		Sleep(1000);
 	} while (!Interruptores[4]);
+	_endthreadex(0);
 	return(0);
 }
 
