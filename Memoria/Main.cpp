@@ -40,7 +40,7 @@ int main()
         NULL,                // Apontador p/ descritor de segurança
         NULL,                // Idem, threads do processo
         FALSE,               // Herança de handles
-        CREATE_NEW_CONSOLE,  // Flags de criação
+        0,  // Flags de criação
         NULL,                // Herança do ambiente de execução
         "..\\x64\\Debug",                // Diretório do arquivo executável
         &si,                 // lpStartUpInfo

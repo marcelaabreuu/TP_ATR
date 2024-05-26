@@ -219,9 +219,6 @@ int main()
 	DWORD dwRet;
 	int Alarme = 1, CLP = 2, Pesagem = 3, Dados = 4, CLPdado = 5, iInterruptores = 6, iESC = 7, iAUX = 8;
 
-	SetConsoleTitle("Processo Lista Circular");
-	cout << "Processo Lista Circular\nAperte ESC para finalizar.\n";
-
 	hMutex1 = CreateMutex(NULL, FALSE, "Mutex1");
 	hMutexA = CreateMutex(NULL, FALSE, "MutexA");
 	hMutexCLP = CreateMutex(NULL, FALSE, "MutexCLP");
@@ -296,12 +293,12 @@ int main()
 
 	Sleep(1000);
 
-	while (1) {
+
 		HANDLE hEvents[5] = { hEventA, hEventB, hEventC, hEventD, hEventESC };
-		DWORD dwRet;
+		DWORD Ret;
 		while (!Interruptores[4]) {
-			dwRet = WaitForMultipleObjects(4, hEvents, FALSE, INFINITE); //Espera qualquer evento
-			int i = dwRet - WAIT_OBJECT_0;
+			Ret = WaitForMultipleObjects(4, hEvents, FALSE, INFINITE); //Espera qualquer evento
+			int i = Ret - WAIT_OBJECT_0;
 			if (i != 4) {
 				if (Interruptores[i] == 0) {
 					Interruptores[i] = 1;
@@ -322,7 +319,24 @@ int main()
 			printf("thread %d terminou: codigo=%d\n", t, dwExitCode);
 			CloseHandle(hThread[t]);	// apaga referência ao objeto
 		}
-	}
+
+		CloseHandle(hThread);
+		CloseHandle(hEventA);
+		CloseHandle(hEventB);
+		CloseHandle(hEventC);
+		CloseHandle(hEventD);
+		CloseHandle(hEventESC);
+		CloseHandle(hEvents);
+
+		for (int k = 0; k < 4; k++) {
+			CloseHandle(hInts[k]);
+		}
+
+		CloseHandle(hInts);
+		CloseHandle(hMutex1);
+		CloseHandle(hMutexA);
+		CloseHandle(hMutexCLP);
+
 	return EXIT_SUCCESS;
 }
 
@@ -331,7 +345,7 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 {
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
 	do {
-		for (int p = 0; p <= 999999; p++) {
+		for (int p = 0; p <= 999999 && !Interruptores[4]; p++) {
 			WaitForSingleObject(hInts[1], INFINITE); //Bloqueia se Sinalizador não-sinalizado	
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			// Secao critica
