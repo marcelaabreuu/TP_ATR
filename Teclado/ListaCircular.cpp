@@ -306,7 +306,8 @@ int main()
 				}
 			}
 			else { 
-				Interruptores[4] = 1; 
+				Interruptores[4] = 1;
+				cout << "\n ESC reconhecido \n";
 				for (int j = 0; j < 4; j++) { //Reseta todos os interruptores
 					ResetEvent(hInts[j]);
 				}
@@ -354,7 +355,7 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 				push("00");
 				if (!isempty()) {
 					showTop();
-					cout << "\nPESAGEM: " << topo << "\n";
+					cout << "\nPEEESAGEM: " << topo << "\n";
 				}
 			}
 			ReleaseMutex(hMutex1);
@@ -415,7 +416,7 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 	do {
 		WaitForSingleObject(hInts[0], INFINITE); //Bloqueia se interruptor não sinalizado
 		WaitForSingleObject(hMutexA, INFINITE);
-		if (!isemptyA()) {
+		if (!isemptyA() && !Interruptores[4]) {
 			showTopA();
 			cout << "\nEXIBE ALARME: " << topoA << "\n\n";
 			popA();
@@ -434,7 +435,7 @@ DWORD WINAPI FuncDados(LPVOID id)
 	do {
 		WaitForSingleObject(hInts[3], INFINITE); //Bloqueia se interruptor não sinalizado
 		WaitForSingleObject(hMutexCLP, INFINITE);
-		if (!isempty()) {
+		if (!isempty() && !Interruptores[4]) {
 			showTopCLP();
 			cout << "\nEXIBE DADO: " << topoCLP << "\n";
 			popCLP();
