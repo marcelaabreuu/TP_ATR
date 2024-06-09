@@ -12,17 +12,22 @@ using namespace std;
 HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, "Alarme");
 HANDLE hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
 HANDLE hInterruptor = CreateEvent(NULL, TRUE, FALSE, "InterruptorA");
+HANDLE hMailslot;
 
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
 bool estado = 0, ESC = 0;
 
+DWORD dwBytesLidos;
 DWORD WINAPI ThreadFunc(LPVOID index)
 {
 	while (!ESC)
 	{
 		WaitForSingleObject(hInterruptor, INFINITE);
 		cout << "\nEXIBE ALARMES\n";
+		string Msg;
+		ReadFile(hMailslot, &Msg, sizeof(string), &dwBytesLidos, NULL);
+		cout << "\nMensagem lida do mailsot: " << Msg << endl;
 		Sleep(500);
 	}
 	return(0);
@@ -45,6 +50,13 @@ int main()
 
 	DWORD ret;
 	HANDLE hEvents[2] = { hEvent, hEventESC };
+
+	//Criando o mailslot (servidor)
+	hMailslot = CreateMailslot(
+		"\\\\.\\mailslot\\MyMailslot",
+		0,
+		MAILSLOT_WAIT_FOREVER,
+		NULL);
 
 	while (1) {
 		ret = WaitForMultipleObjects(2, hEvents, FALSE, INFINITE);
@@ -69,6 +81,7 @@ int main()
 	CloseHandle(hEventESC);
 	CloseHandle(hEvents);
 	CloseHandle(hThread);
+	CloseHandle(hMailslot);
 	return EXIT_SUCCESS;
 }
 

@@ -56,6 +56,7 @@ DWORD WINAPI FuncCLPdado(LPVOID);
 DWORD WINAPI FuncAlarme(LPVOID);
 DWORD WINAPI FuncDados(LPVOID);
 DWORD WINAPI ConsomeStackPrincipal(LPVOID);
+DWORD dwBytesEnviados;
 
 //Eventos do Teclado
 HANDLE hEventA = CreateEvent(NULL, FALSE, FALSE, "CapturaAlarmes");  //Reset automático e inicializa não-sinalizado
@@ -81,6 +82,7 @@ HANDLE hEventNFull;
 HANDLE Mutexes1A[2] = { hMutex1, hMutexA };
 HANDLE Mutexes1CLP[2] = { hMutex1, hMutexCLP };
 HANDLE hThread[7] = { hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado, hThreadAUX, hInterruptores };
+HANDLE hMailslot;
 
 string teclado;
 
@@ -111,6 +113,7 @@ BOOL isnotfull() {
 	else
 		return false;
 }
+BOOL bStatus;
 
 void push(string value) {
 	if (sizestack <= 200) {
@@ -127,7 +130,6 @@ void pushA(string value) {
 	ptrA->link = topA;
 	top = ptrA;
 	sizestackA++;
-
 }
 void pushCLP(string value) {
 	Node* ptrCLP = new Node();
@@ -224,6 +226,15 @@ int main()
 	hMutexCLP = CreateMutex(NULL, FALSE, "MutexCLP");
 
 	hEventNFull = CreateEvent(NULL, TRUE, TRUE, "EventoNFull");
+
+	hMailslot = CreateFile(
+		"..\\x64\\Debug\\MailSlotDado",
+		GENERIC_WRITE,
+		FILE_SHARE_READ,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL);
 
 	//Tarefa de leitura do sistema de pesagem
 	hThreadPesagem = (HANDLE)_beginthreadex(
@@ -329,6 +340,7 @@ int main()
 		CloseHandle(hEventD);
 		CloseHandle(hEventESC);
 		CloseHandle(hEvents);
+		CloseHandle(hMailslot);
 
 		for (int k = 0; k < 4; k++) {
 			CloseHandle(hInts[k]);
@@ -343,6 +355,7 @@ int main()
 }
 
 
+//Sistema de Pesagem
 DWORD WINAPI FuncPesagem(LPVOID id)
 {
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
@@ -366,6 +379,7 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 	return(0);
 }
 
+//Leitua do CLP: Alarme
 DWORD WINAPI FuncCLPalarme(LPVOID id)
 {
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
@@ -388,6 +402,7 @@ DWORD WINAPI FuncCLPalarme(LPVOID id)
 	return(0);
 }
 
+//Leitura do CLP: Dados
 DWORD WINAPI FuncCLPdado(LPVOID id)
 {
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
@@ -410,6 +425,7 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 	return(0);
 }
 
+//Captura de Alarmes
 DWORD WINAPI FuncAlarme(LPVOID id)
 {
 	string teste;
@@ -418,7 +434,10 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 		WaitForSingleObject(hMutexA, INFINITE);
 		if (!isemptyA() && !Interruptores[4]) {
 			showTopA();
-			cout << "\nEXIBE ALARME: " << topoA << "\n\n";
+			cout << "\nEXIBE ALARME: Escreve no mailslot: " << topoA << "\n\n";
+			//Teste de escrita no mailslot
+			//string Msg = topoA;
+			//WriteFile(hMailslot, &Msg, sizeof(topoA), &dwBytesEnviados, NULL);
 			popA();
 		}
 		ReleaseMutex(hMutexA);
@@ -428,6 +447,7 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 	return(0);
 }
 
+//Captura de Dados
 DWORD WINAPI FuncDados(LPVOID id)
 {
 	string teste;
@@ -437,7 +457,11 @@ DWORD WINAPI FuncDados(LPVOID id)
 		WaitForSingleObject(hMutexCLP, INFINITE);
 		if (!isempty() && !Interruptores[4]) {
 			showTopCLP();
-			cout << "\nEXIBE DADO: " << topoCLP << "\n";
+			cout << "\nEXIBE DADO: Escreve no mailslot" << topoCLP << "\n";
+			//Teste de escrita no mailslot
+			string Msg = topoCLP;
+			bStatus = WriteFile(hMailslot, &Msg, sizeof(topoCLP), &dwBytesEnviados, NULL);
+			if (bStatus == 0) GetLastError();
 			popCLP();
 		}
 		ReleaseMutex(hMutexCLP);

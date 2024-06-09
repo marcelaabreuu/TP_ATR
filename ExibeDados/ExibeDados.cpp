@@ -11,17 +11,24 @@ using namespace std;
 
 HANDLE hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
 HANDLE hInterruptor = CreateEvent(NULL, TRUE, FALSE, "InterruptorD");
+HANDLE hMailslot;
+BOOL bStatus;
 
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
 bool estado = 0, ESC = 0;
 
+DWORD dwBytesLidos;
 DWORD WINAPI ThreadFunc(LPVOID index)
 {
 	while (!ESC)
 	{
 		WaitForSingleObject(hInterruptor, INFINITE);
-		cout << "\nEXIBE DADOS\n";
+		string Msg;
+		bStatus = ReadFile(hMailslot, &Msg, sizeof(string), &dwBytesLidos, NULL);
+		if (bStatus == 0) GetLastError();
+		cout << "\nMensagem lida do mailsot: " << Msg << endl;
+		//cout << "\nEXIBE DADOS\n";
 		Sleep(500);
 	}
 	return(0);
@@ -45,7 +52,14 @@ int main()
 		(CAST_LPDWORD)&dwThreadId
 	);
 
-	Sleep(500);
+	//Criando o mailslot (servidor)
+	hMailslot = CreateMailslot(
+		"..\\x64\\Debug\\MailSlotDado",
+		0,
+		MAILSLOT_WAIT_FOREVER,
+		NULL);
+
+	Sleep(50);
 
 	DWORD ret;
 	HANDLE hEvents[2] = { hEvent, hEventESC };
