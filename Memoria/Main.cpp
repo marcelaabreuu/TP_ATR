@@ -19,16 +19,6 @@ int main()
 
     SetConsoleTitle("Console Principal");
 
-    //handle para evento
-    //Cria os eventos que acordam as threads
-    hEventA = CreateEvent(NULL, FALSE, FALSE, "CapturaAlarmes");  //Reset automático e inicializa não-sinalizado
-    hEventB = CreateEvent(NULL, FALSE, FALSE, "Pesagem");
-    hEventC = CreateEvent(NULL, FALSE, FALSE, "LeituraCLP");
-    hEventD = CreateEvent(NULL, FALSE, FALSE, "CapturaDados");
-    hEvent1 = CreateEvent(NULL, FALSE, FALSE, "Alarme");
-    hEvent2 = CreateEvent(NULL, FALSE, FALSE, "Dados");
-    hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
-
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);  // Tamanho da estrutura em bytes
     ZeroMemory(&NewProcess, sizeof(NewProcess));
@@ -40,11 +30,11 @@ int main()
         NULL,                // Apontador p/ descritor de segurança
         NULL,                // Idem, threads do processo
         FALSE,               // Herança de handles
-        0,  // Flags de criação
+        0,                   // Flags de criação
         NULL,                // Herança do ambiente de execução
-        "..\\x64\\Debug",                // Diretório do arquivo executável
+        "..\\x64\\Debug",    // Diretório do arquivo executável
         &si,                 // lpStartUpInfo
-        &NewProcess[0]);        // lpProcessInformation
+        &NewProcess[0]);     // lpProcessInformation
 
     if (!status)
         std::cerr << "Erro na abertura cmd teclado = " << GetLastError() << "\n";
@@ -58,9 +48,9 @@ int main()
         FALSE,               // Herança de handles
         CREATE_NEW_CONSOLE,  // Flags de criação
         NULL,                // Herança do ambiente de execução
-        "..\\x64\\Debug",                // Diretório do arquivo executável
+        "..\\x64\\Debug",    // Diretório do arquivo executável
         &si,                 // lpStartUpInfo
-        &NewProcess[1]);        // lpProcessInformation
+        &NewProcess[1]);     // lpProcessInformation
 
     if (!status)
         std::cerr << "Erro na abertura Exibe Alarmes = " << GetLastError() << "\n";
@@ -84,9 +74,15 @@ int main()
     //Espera todos os processos serem abertos 
     WaitForMultipleObjects(3, &NewProcess->hProcess, TRUE, INFINITE);
 
+    //Cria os eventos que acordam as threads
+    hEventA = CreateEvent(NULL, FALSE, FALSE, "CapturaAlarmes");  //Reset automático e inicializa não-sinalizado
+    hEventB = CreateEvent(NULL, FALSE, FALSE, "Pesagem");
+    hEventC = CreateEvent(NULL, FALSE, FALSE, "LeituraCLP");
+    hEventD = CreateEvent(NULL, FALSE, FALSE, "CapturaDados");
+    hEvent1 = CreateEvent(NULL, FALSE, FALSE, "Alarme");
+    hEvent2 = CreateEvent(NULL, FALSE, FALSE, "Dados");
+    hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");            //Reset manual e inicializa não-sinalizado
 
-   
-    
     std::cout << "Selecione:\n";
     std::cout << "a: Iniciar/Pausar captura de alarmes\n";
     std::cout << "b: Iniciar/Pausar sistema de pesagem\n";
@@ -120,10 +116,20 @@ int main()
         case 'd':
             SetEvent(hEventD);
             break;
+        default:
+                break;
         }
     } while (action != ESC);
 
     SetEvent(hEventESC);
+
+    CloseHandle(hEventA);
+    CloseHandle(hEventB);
+    CloseHandle(hEventC);
+    CloseHandle(hEventD);
+    CloseHandle(hEvent1);
+    CloseHandle(hEvent2);
+    CloseHandle(hEventESC);
 
     // Fechar handles dos processos
     for (int i = 0; i < 3; i++) {

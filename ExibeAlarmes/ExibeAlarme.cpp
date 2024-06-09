@@ -5,7 +5,6 @@
 #include <process.h>	
 #include <conio.h>  // _getch
 #define _CHECKERROR	1	// Ativa função CheckForError
-#include "CheckForError.h"
 #include <tchar.h>
 
 using namespace std;
@@ -43,8 +42,6 @@ int main()
 		0,
 		(CAST_LPDWORD)&dwThreadId
 	);
-
-	Sleep(500);
 
 	DWORD ret;
 	HANDLE hEvents[2] = { hEvent, hEventESC };

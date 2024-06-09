@@ -5,7 +5,6 @@
 #include <process.h>	
 #include <conio.h>  // _getch
 #define _CHECKERROR	1	// Ativa função CheckForError
-#include "CheckForError.h"
 #include <tchar.h>
 
 using namespace std;
