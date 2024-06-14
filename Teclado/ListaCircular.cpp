@@ -56,7 +56,6 @@ DWORD WINAPI FuncCLPdado(LPVOID);
 DWORD WINAPI FuncAlarme(LPVOID);
 DWORD WINAPI FuncDados(LPVOID);
 DWORD WINAPI ConsomeStackPrincipal(LPVOID);
-DWORD dwBytesEnviados;
 
 //Eventos do Teclado
 HANDLE hEventA = CreateEvent(NULL, FALSE, FALSE, "CapturaAlarmes");  //Reset automático e inicializa não-sinalizado
