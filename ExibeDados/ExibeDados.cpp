@@ -24,11 +24,7 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 	while (!ESC)
 	{
 		WaitForSingleObject(hInterruptor, INFINITE);
-		string Msg;
-		bStatus = ReadFile(hMailslot, &Msg, sizeof(string), &dwBytesLidos, NULL);
-		if (bStatus == 0) GetLastError();
-		cout << "\nMensagem lida do mailsot: " << Msg << endl;
-		//cout << "\nEXIBE DADOS\n";
+		cout << "\nEXIBE DADOS\n";
 		Sleep(500);
 	}
 	return(0);
