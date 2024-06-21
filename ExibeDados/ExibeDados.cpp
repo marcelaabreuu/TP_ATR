@@ -11,8 +11,10 @@ using namespace std;
 
 HANDLE hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
 HANDLE hInterruptor = CreateEvent(NULL, TRUE, FALSE, "InterruptorD");
-HANDLE hMailslot;
-BOOL bStatus;
+HANDLE hFile;
+DWORD dwBytesWritten;
+DWORD dwBytesRead;
+LONG lFilePosLow;
 
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
@@ -38,7 +40,20 @@ int main()
 	hEvent = CreateEvent(NULL, FALSE, FALSE, "Dados");
 	HANDLE hThread;
 	DWORD dwThreadId;
+	WIN32_FIND_DATA FindFileData;
 	int i = 0;
+
+	hFile = CreateFile("processo.txt",
+		GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE, // abre para leitura e escrita
+		NULL,		// atributos de segurança 
+		CREATE_ALWAYS,// cria novo arquivo caso ele não exista, abre se já existe
+		FILE_ATTRIBUTE_NORMAL,
+		NULL);		// Template para atributos e flags
+
+	//WriteFile(hFile, "Escreve no arquivo", sizeof(string), &dwBytesWritten, NULL);
+	//printf("Numero de bytes escritos = %d\n", dwBytesWritten);
+
 	hThread = (HANDLE)_beginthreadex(
 		NULL,
 		0,
@@ -47,15 +62,6 @@ int main()
 		0,
 		(CAST_LPDWORD)&dwThreadId
 	);
-
-	//Criando o mailslot (servidor)
-	hMailslot = CreateMailslot(
-		"..\\x64\\Debug\\MailSlotDado",
-		0,
-		MAILSLOT_WAIT_FOREVER,
-		NULL);
-
-	Sleep(50);
 
 	DWORD ret;
 	HANDLE hEvents[2] = { hEvent, hEventESC };
@@ -78,10 +84,12 @@ int main()
 		else { ESC = 1; break; }
 	}
 
+	DeleteFile("processo.txt");
 	CloseHandle(hInterruptor);
 	CloseHandle(hEvent);
 	CloseHandle(hEventESC);
 	CloseHandle(hEvents);
+	CloseHandle(hFile);
 	CloseHandle(hThread);
 	return EXIT_SUCCESS;
 }
