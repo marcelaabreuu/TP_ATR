@@ -44,7 +44,7 @@ bool Interruptores[5] = { 0, 0, 0, 0, 0 };  //Interruptores[4] = ESC
 struct Node
 {
 	string data;
-	Node* link;
+	Node* link{};
 };
 
 string topo, topoA, topoCLP;
@@ -138,7 +138,7 @@ void pushA(string value) {
 	Node* ptrA = new Node();
 	ptrA->data = value;
 	ptrA->link = topA;
-	top = ptrA;
+	topA = ptrA;
 	sizestackA++;
 
 }
@@ -146,7 +146,7 @@ void pushCLP(string value) {
 	Node* ptrCLP = new Node();
 	ptrCLP->data = value;
 	ptrCLP->link = topA;
-	top = ptrCLP;
+	topCLP = ptrCLP;
 	sizestackCLP++;
 }
 void pop()
@@ -161,7 +161,7 @@ void pop()
 		top = top->link;
 		delete(ptr);
 		sizestack--;
-		ResetEvent(hEventNFull);
+		//ResetEvent(hEventNFull);
 	}
 }
 void popA()
@@ -172,8 +172,8 @@ void popA()
 	}
 	else
 	{
-		Node* ptrA = top;
-		top = top->link;
+		Node* ptrA = topA;
+		topA = topA->link;
 		delete(ptrA);
 		sizestackA--;
 	}
@@ -186,8 +186,8 @@ void popCLP()
 	}
 	else
 	{
-		Node* ptrCLP = top;
-		top = top->link;
+		Node* ptrCLP = topCLP;
+		topCLP = topCLP->link;
 		delete(ptrCLP);
 		sizestackCLP--;
 	}
@@ -199,23 +199,23 @@ int getSize()
 void showTop()
 {
 	if (!isempty()) {
-		string topo = top->data;
-		cout << "Elemento no topo:" << topo << "\n";
+		topo = top->data;
+		cout << "Elemento no topo Lista 1:" << topo << "\n";
 	}
 }
 void showTopA()
 {
 	if (!isemptyA()) {
-		string topoA = topA->data;
-		cout << "Elemento no topo:" << topo << "\n";
+		topoA = topA->data;
+		cout << "Elemento no topo alarme:" << topoA << "\n";
 	}
 
 }
 void showTopCLP()
 {
 	if (!isemptyCLP()) {
-		string topoCLP = topCLP->data;
-		cout << "Elemento no topo:" << topo << "\n";
+		topoCLP = topCLP->data;
+		cout << "Elemento no topo dado:" << topoCLP << "\n";
 	}
 }
 
@@ -387,7 +387,6 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 				push(msgPesagem);
 				if (!isempty()) {
 					showTop();
-					cout << "\nPESAGEM: " << topo << "\n";
 				}
 			}
 			ReleaseMutex(hMutex1);
@@ -430,7 +429,6 @@ DWORD WINAPI FuncCLPalarme(LPVOID id) //Alarme proveniente do clp, mesmo formato
 				push(msgAlarme);
 				if (!isempty()) {
 					showTop();
-					cout << "\nLE ALARME: " << topo << "\n";
 				}
 			}
 			ReleaseMutex(hMutex1);
@@ -476,11 +474,12 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			if (sizestack <= 200) {// Se nao vazia, coloca indicador 55 de alarme pesagem
+				cout << "teste";
 				push(msgDado);
 				if (!isempty()) {
 					showTop();
-					cout << "LE DADO: " << topo << "\n";
 				}
+
 			}
 			ReleaseMutex(hMutex1);
 
@@ -511,14 +510,14 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 
 DWORD WINAPI FuncDados(LPVOID id)
 {
-	hFile = CreateFile("processo.txt",
+	/*hFile = CreateFile("processo.txt",
 		GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE, // abre para leitura e escrita
-		NULL,		// atributos de segurança 
+		NULL,		// atributos de segurança
 		OPEN_ALWAYS,// cria novo arquivo caso ele não exista, abre se já existe
 		FILE_ATTRIBUTE_NORMAL,
 		NULL);		// Template para atributos e flags
-	
+	*/
 	do {
 		WaitForSingleObject(hInts[3], INFINITE); //Bloqueia se interruptor não sinalizado
 		WaitForSingleObject(hMutexCLP, INFINITE);
@@ -528,7 +527,7 @@ DWORD WINAPI FuncDados(LPVOID id)
 			popCLP();
 		}
 		ReleaseMutex(hMutexCLP);
-		Sleep(1000);
+
 	} while (!Interruptores[4]);
 	_endthreadex(0);
 	return(0);
@@ -536,23 +535,35 @@ DWORD WINAPI FuncDados(LPVOID id)
 
 // Consome Stack principal e deposita nas respectivas stacks de alarme de pesagem ou clp
 DWORD WINAPI ConsomeStackPrincipal(LPVOID id) {
+	do {
 
-	WaitForMultipleObjects(2, Mutexes1A, TRUE, INFINITE);
+		if (!isempty()) {
 
-	if (!isempty()) {
-		showTop();
-		if (topo.compare(7, 2, "55") == 0 || topo.compare(7, 2, "00") == 0) {
-			pushA(topo);
-			pop();
+			if (topo.compare(7, 2, "55") == 0 || topo.compare(7, 2, "00") == 0) {
+				WaitForSingleObject(hMutex1, INFINITE);
+				WaitForSingleObject(hMutexA, INFINITE);
+				pushA(topo);
+				showTopA();
+				pop();
+				ReleaseMutex(hMutex1);
+				ReleaseMutex(hMutexA);
+
+			}
+			else if (topo.compare(7, 2, "99") == 0) {
+				WaitForSingleObject(hMutex1, INFINITE);
+				WaitForSingleObject(hMutexCLP, INFINITE);
+				pushCLP(topo);
+				showTopCLP();
+				pop();
+				ReleaseMutex(hMutex1);
+				ReleaseMutex(hMutexCLP);
+			}
 		}
-		else if (topo.compare(7, 2, "99") == 0) {
-			pushCLP(topo);
-			pop();
-		}
-	}
 
-	ReleaseMutex(hMutex1);
-	ReleaseMutex(hMutexA);
+
+
+	} while (!Interruptores[4]);
+
 	return (0);
 }
 
@@ -561,7 +572,7 @@ DWORD WINAPI ConsomeStackPrincipal(LPVOID id) {
 			lFilePosLow = indice * sizeof(topoCLP.c_str());
 			indice+=1;
 			SetFilePointer(hFile, lFilePosLow, NULL, FILE_BEGIN);
-			
+
 			//printf("Numero de bytes escritos = %d\n", dwBytesWritten);
 			string LeArquivo;
 			printf("File Pointer = %d\n", lFilePosLow);
