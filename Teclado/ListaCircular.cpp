@@ -15,6 +15,8 @@
 #include <chrono>
 #include <ctime>
 #include <iomanip>
+#include <time.h>
+#include <string>
 
 using namespace std;
 
@@ -30,6 +32,7 @@ const int NumConsumers = 2;
 
 const int MaxMsgAlarme = 200;
 const int MaxNSEQ = 999999;
+
 
 int j, k, m;
 
@@ -56,7 +59,16 @@ DWORD WINAPI FuncCLPdado(LPVOID);
 DWORD WINAPI FuncAlarme(LPVOID);
 DWORD WINAPI FuncDados(LPVOID);
 DWORD WINAPI ConsomeStackPrincipal(LPVOID);
-DWORD dwBytesEnviados;
+
+//Arquivo em Disco
+HANDLE hFile;
+DWORD dwBytesWritten;
+DWORD dwBytesRead;
+LONG lFilePosLow;
+BOOL bStatus;
+
+//Eventos de temporizacao com timeout
+HANDLE hTimeOut = CreateEvent(NULL, TRUE, FALSE, "EvTimeOut"); //Evento nunca disparado, usado para temporizacao
 
 //Eventos do Teclado
 HANDLE hEventA = CreateEvent(NULL, FALSE, FALSE, "CapturaAlarmes");  //Reset automático e inicializa não-sinalizado
@@ -69,7 +81,7 @@ HANDLE hIntA = CreateEvent(NULL, TRUE, FALSE, "IntA");
 HANDLE hIntB = CreateEvent(NULL, TRUE, FALSE, "IntB");
 HANDLE hIntC = CreateEvent(NULL, TRUE, FALSE, "IntC");
 HANDLE hIntD = CreateEvent(NULL, TRUE, FALSE, "IntD");
-HANDLE hInts[4] = {hIntA, hIntB, hIntC, hIntD};
+HANDLE hInts[4] = { hIntA, hIntB, hIntC, hIntD };
 
 HANDLE hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
 
@@ -82,7 +94,6 @@ HANDLE hEventNFull;
 HANDLE Mutexes1A[2] = { hMutex1, hMutexA };
 HANDLE Mutexes1CLP[2] = { hMutex1, hMutexCLP };
 HANDLE hThread[7] = { hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado, hThreadAUX, hInterruptores };
-HANDLE hMailslot;
 
 string teclado;
 
@@ -113,7 +124,6 @@ BOOL isnotfull() {
 	else
 		return false;
 }
-BOOL bStatus;
 
 void push(string value) {
 	if (sizestack <= 200) {
@@ -130,6 +140,7 @@ void pushA(string value) {
 	ptrA->link = topA;
 	top = ptrA;
 	sizestackA++;
+
 }
 void pushCLP(string value) {
 	Node* ptrCLP = new Node();
@@ -227,15 +238,6 @@ int main()
 
 	hEventNFull = CreateEvent(NULL, TRUE, TRUE, "EventoNFull");
 
-	hMailslot = CreateFile(
-		"..\\x64\\Debug\\MailSlotDado",
-		GENERIC_WRITE,
-		FILE_SHARE_READ,
-		NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL);
-
 	//Tarefa de leitura do sistema de pesagem
 	hThreadPesagem = (HANDLE)_beginthreadex(
 		NULL,
@@ -299,133 +301,196 @@ int main()
 	Sleep(1000);
 
 
-		HANDLE hEvents[5] = { hEventA, hEventB, hEventC, hEventD, hEventESC };
-		DWORD Ret;
-		while (1) {
-			Ret = WaitForMultipleObjects(5, hEvents, FALSE, INFINITE); //Espera qualquer evento
-			int i = Ret - WAIT_OBJECT_0;
-			if (i != 4) {
-				if (Interruptores[i] == 0) {
-					Interruptores[i] = 1;
-					SetEvent(hInts[i]);
-					cout << "\nTAREFA " << i << " DESBLOQUEADA\n";
-				}
-				else {
-					Interruptores[i] = 0;
-					ResetEvent(hInts[i]);
-					cout << "\nTAREFA " << i << " BLOQUEADA\n";
-				}
+	HANDLE hEvents[5] = { hEventA, hEventB, hEventC, hEventD, hEventESC };
+	DWORD Ret;
+	while (1) {
+		Ret = WaitForMultipleObjects(5, hEvents, FALSE, INFINITE); //Espera qualquer evento
+		int i = Ret - WAIT_OBJECT_0;
+		if (i != 4) {
+			if (Interruptores[i] == 0) {
+				Interruptores[i] = 1;
+				SetEvent(hInts[i]);
+				cout << "\nTAREFA " << i << " DESBLOQUEADA\n";
 			}
-			else { 
-				Interruptores[4] = 1;
-				cout << "\n ESC reconhecido \n";
-				for (int j = 0; j < 4; j++) { //Reseta todos os interruptores
-					ResetEvent(hInts[j]);
-				}
-				WaitForMultipleObjects(4, hInts, TRUE, INFINITE);
-				break;
+			else {
+				Interruptores[i] = 0;
+				ResetEvent(hInts[i]);
+				cout << "\nTAREFA " << i << " BLOQUEADA\n";
 			}
 		}
-
-		for (int t = 0; t < 7; ++t) {
-			GetExitCodeThread(hThread[t], &dwExitCode);
-			printf("thread %d terminou: codigo=%d\n", t, dwExitCode);
-			CloseHandle(hThread[t]);	// apaga referência ao objeto
+		else {
+			Interruptores[4] = 1;
+			cout << "\n  _ESC reconhecido \n";
+			for (int j = 0; j < 4; j++) { //Reseta todos os interruptores
+				ResetEvent(hInts[j]);
+			}
+			WaitForMultipleObjects(4, hInts, TRUE, INFINITE);
+			break;
 		}
+	}
 
-		CloseHandle(hThread);
-		CloseHandle(hEventA);
-		CloseHandle(hEventB);
-		CloseHandle(hEventC);
-		CloseHandle(hEventD);
-		CloseHandle(hEventESC);
-		CloseHandle(hEvents);
-		CloseHandle(hMailslot);
+	for (int t = 0; t < 7; ++t) {
+		GetExitCodeThread(hThread[t], &dwExitCode);
+		printf("thread %d terminou: codigo=%d\n", t, dwExitCode);
+		CloseHandle(hThread[t]);	// apaga referência ao objeto
+	}
 
-		for (int k = 0; k < 4; k++) {
-			CloseHandle(hInts[k]);
-		}
+	CloseHandle(hThread);
+	CloseHandle(hEventA);
+	CloseHandle(hEventB);
+	CloseHandle(hEventC);
+	CloseHandle(hEventD);
+	CloseHandle(hEventESC);
+	CloseHandle(hEvents);
 
-		CloseHandle(hInts);
-		CloseHandle(hMutex1);
-		CloseHandle(hMutexA);
-		CloseHandle(hMutexCLP);
+	for (int k = 0; k < 4; k++) {
+		CloseHandle(hInts[k]);
+	}
+
+	CloseHandle(hInts);
+	CloseHandle(hMutex1);
+	CloseHandle(hMutexA);
+	CloseHandle(hMutexCLP);
 
 	return EXIT_SUCCESS;
 }
 
 
-//Sistema de Pesagem
 DWORD WINAPI FuncPesagem(LPVOID id)
 {
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
+	string ORIGEM = "00";
 	do {
 		for (int p = 0; p <= 999999 && !Interruptores[4]; p++) {
+
+			// Strings para receber os codigos de alarmes definidos
+			//Numero de sequencia 0 a 999999
+			string NSEQ = to_string(p);
+			NSEQ.insert(0, 6 - NSEQ.size(), '0');
+
+			//Codigo de 0 a 99
+			string CODIGO = to_string(rand() % 99);
+			CODIGO.insert(0, 2 - CODIGO.size(), '0');
+
+			//Tempo do sistema
+			char tbuffer[9];
+			_strtime(tbuffer);
+			string TIMESTAMP = tbuffer;
+
+			//Mensagem completa do alarme 
+			string msgPesagem = NSEQ + "#" + ORIGEM + "#" + CODIGO + "#" + TIMESTAMP;
+
 			WaitForSingleObject(hInts[1], INFINITE); //Bloqueia se Sinalizador não-sinalizado	
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			// Secao critica
-			if (sizestack <= 200) { // Se nao vazia, coloca indicador 00 de alarme pesagem
-				push("00");
+			if (sizestack <= 200) { // Se nao cheia, coloca alarme codigo 00 de pesagem
+				push(msgPesagem);
 				if (!isempty()) {
 					showTop();
-					cout << "\nPEEESAGEM: " << topo << "\n";
+					cout << "\nPESAGEM: " << topo << "\n";
 				}
 			}
 			ReleaseMutex(hMutex1);
-			Sleep(1000 * (rand() % 5 + 1));
+
+			WaitForSingleObject(hTimeOut, 1000 * (rand() % 5 + 1)); //Temporizador
+
 		}
 	} while (!Interruptores[4]);
 	_endthreadex(0);
 	return(0);
 }
 
-//Leitua do CLP: Alarme
-DWORD WINAPI FuncCLPalarme(LPVOID id)
+DWORD WINAPI FuncCLPalarme(LPVOID id) //Alarme proveniente do clp, mesmo formato de mensagem do alarme de peso
 {
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
+	string ORIGEM = "55";
 	do {
 		for (int p = 0; p <= 999999 && !Interruptores[4]; p++) {
+
+			// Strings para receber os codigos de alarmes definidos
+			//Numero de sequencia 0 a 999999
+			string NSEQ = to_string(p);
+			NSEQ.insert(0, 6 - NSEQ.size(), '0');
+
+			//Codigo de 0 a 99
+			string CODIGO = to_string(rand() % 99);
+			CODIGO.insert(0, 2 - CODIGO.size(), '0');
+
+			//Tempo do sistema
+			char tbuffer[9];
+			_strtime(tbuffer);
+			string TIMESTAMP = tbuffer;
+
+			//Mensagem completa do alarme 
+			string msgAlarme = NSEQ + "#" + ORIGEM + "#" + CODIGO + "#" + TIMESTAMP;
+
 			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			if (sizestack <= 200) {  // Se nao vazia, coloca indicador 55 de alarme pesagem
-				push("55");
+				push(msgAlarme);
 				if (!isempty()) {
 					showTop();
 					cout << "\nLE ALARME: " << topo << "\n";
 				}
 			}
 			ReleaseMutex(hMutex1);
-			Sleep(500);
+
+			WaitForSingleObject(hTimeOut, 1000 * (rand() % 5 + 1)); //Temporizador
 		}
 	} while (!Interruptores[4]);
 	_endthreadex(0);
 	return(0);
 }
 
-//Leitura do CLP: Dados
 DWORD WINAPI FuncCLPdado(LPVOID id)
 {
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
+	string ORIGEM = "99";
 	do {
 		for (int p = 0; p <= 999999 && !Interruptores[4]; p++) {
+
+			// Strings para receber os codigos de alarmes definidos
+			//Numero de sequencia 0 a 999999
+			string NSEQ = to_string(p);
+			NSEQ.insert(0, 6 - NSEQ.size(), '0');
+
+			//Valor da velocidade 
+			float t = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / 999.9));
+			stringstream ss;
+			ss << fixed << setprecision(1) << t;
+			string VEL = ss.str();
+			VEL.insert(0, 5 - VEL.size(), '0');
+
+			//Estado de 0 ou 1
+			string SENSORIC = to_string(rand() % 2);
+			string SENSORFC = to_string(rand() % 2);
+
+			//Tempo do sistema
+			char tbuffer[9];
+			_strtime(tbuffer);
+			string TIMESTAMP = tbuffer;
+
+			//Mensagem completa do alarme 
+			string msgDado = NSEQ + "#" + ORIGEM + "#" + VEL + "#" + SENSORIC + "#" + SENSORFC + "#" + TIMESTAMP;
+
 			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			if (sizestack <= 200) {// Se nao vazia, coloca indicador 55 de alarme pesagem
-				push("99");
+				push(msgDado);
 				if (!isempty()) {
 					showTop();
 					cout << "LE DADO: " << topo << "\n";
 				}
 			}
 			ReleaseMutex(hMutex1);
-			Sleep(1000 * (rand() % 5 + 1));
+
+			WaitForSingleObject(hTimeOut, 500); //Temporizador
 		}
 	} while (!Interruptores[4]);
 	_endthreadex(0);
 	return(0);
 }
 
-//Captura de Alarmes
 DWORD WINAPI FuncAlarme(LPVOID id)
 {
 	string teste;
@@ -434,34 +499,32 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 		WaitForSingleObject(hMutexA, INFINITE);
 		if (!isemptyA() && !Interruptores[4]) {
 			showTopA();
-			cout << "\nEXIBE ALARME: Escreve no mailslot: " << topoA << "\n\n";
-			//Teste de escrita no mailslot
-			//string Msg = topoA;
-			//WriteFile(hMailslot, &Msg, sizeof(topoA), &dwBytesEnviados, NULL);
+			cout << "\nEXIBE ALARME: " << topoA << "\n\n";
 			popA();
 		}
 		ReleaseMutex(hMutexA);
-		Sleep(1000);
+
 	} while (!Interruptores[4]);
 	_endthreadex(0);
 	return(0);
 }
 
-//Captura de Dados
 DWORD WINAPI FuncDados(LPVOID id)
 {
-	string teste;
-
+	hFile = CreateFile("processo.txt",
+		GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE, // abre para leitura e escrita
+		NULL,		// atributos de segurança 
+		OPEN_ALWAYS,// cria novo arquivo caso ele não exista, abre se já existe
+		FILE_ATTRIBUTE_NORMAL,
+		NULL);		// Template para atributos e flags
+	
 	do {
 		WaitForSingleObject(hInts[3], INFINITE); //Bloqueia se interruptor não sinalizado
 		WaitForSingleObject(hMutexCLP, INFINITE);
 		if (!isempty() && !Interruptores[4]) {
 			showTopCLP();
-			cout << "\nEXIBE DADO: Escreve no mailslot" << topoCLP << "\n";
-			//Teste de escrita no mailslot
-			string Msg = topoCLP;
-			bStatus = WriteFile(hMailslot, &Msg, sizeof(topoCLP), &dwBytesEnviados, NULL);
-			if (bStatus == 0) GetLastError();
+			cout << "\nEXIBE DADO: " << topoCLP << "\n";
 			popCLP();
 		}
 		ReleaseMutex(hMutexCLP);
@@ -478,11 +541,11 @@ DWORD WINAPI ConsomeStackPrincipal(LPVOID id) {
 
 	if (!isempty()) {
 		showTop();
-		if (topo == "55" || topo == "00") {
+		if (topo.compare(7, 2, "55") == 0 || topo.compare(7, 2, "00") == 0) {
 			pushA(topo);
 			pop();
 		}
-		else if (topo == "99") {
+		else if (topo.compare(7, 2, "99") == 0) {
 			pushCLP(topo);
 			pop();
 		}
@@ -494,4 +557,15 @@ DWORD WINAPI ConsomeStackPrincipal(LPVOID id) {
 }
 
 
-
+/*WriteFile(hFile, topoCLP.c_str(), sizeof(topoCLP.c_str()), &dwBytesWritten, NULL);
+			lFilePosLow = indice * sizeof(topoCLP.c_str());
+			indice+=1;
+			SetFilePointer(hFile, lFilePosLow, NULL, FILE_BEGIN);
+			
+			//printf("Numero de bytes escritos = %d\n", dwBytesWritten);
+			string LeArquivo;
+			printf("File Pointer = %d\n", lFilePosLow);
+			bStatus = ReadFile(hFile, &LeArquivo, sizeof(topoCLP.c_str()), &dwBytesRead, NULL);
+			if (bStatus == 0)  std::cerr << "\nErro na abertura Exibe Dados = " << GetLastError() << "\n";
+			cout << "\nFoi lido do arquivo: " << LeArquivo << endl;
+			printf("Numero de bytes lidos = %d\n", &dwBytesRead);*/
