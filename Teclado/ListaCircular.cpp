@@ -60,6 +60,13 @@ DWORD WINAPI FuncAlarme(LPVOID);
 DWORD WINAPI FuncDados(LPVOID);
 DWORD WINAPI ConsomeStackPrincipal(LPVOID);
 
+//Arquivo em Disco
+HANDLE hFile;
+DWORD dwBytesWritten;
+DWORD dwBytesRead;
+LONG lFilePosLow;
+BOOL bStatus;
+
 //Eventos de temporizacao com timeout
 HANDLE hTimeOut = CreateEvent(NULL, TRUE, FALSE, "EvTimeOut"); //Evento nunca disparado, usado para temporizacao
 
@@ -313,7 +320,7 @@ int main()
 		}
 		else {
 			Interruptores[4] = 1;
-			cout << "\n ESC reconhecido \n";
+			cout << "\n  _ESC reconhecido \n";
 			for (int j = 0; j < 4; j++) { //Reseta todos os interruptores
 				ResetEvent(hInts[j]);
 			}
@@ -504,14 +511,33 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 
 DWORD WINAPI FuncDados(LPVOID id)
 {
-	string teste;
-
+	hFile = CreateFile("processo.txt",
+		GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE, // abre para leitura e escrita
+		NULL,		// atributos de segurança 
+		OPEN_ALWAYS,// cria novo arquivo caso ele não exista, abre se já existe
+		FILE_ATTRIBUTE_NORMAL,
+		NULL);		// Template para atributos e flags
+	
+	int indice = 0;
 	do {
 		WaitForSingleObject(hInts[3], INFINITE); //Bloqueia se interruptor não sinalizado
 		WaitForSingleObject(hMutexCLP, INFINITE);
 		if (!isempty() && !Interruptores[4]) {
 			showTopCLP();
-			cout << "\nEXIBE DADO: " << topoCLP << "\n";
+			WriteFile(hFile, topoCLP.c_str(), sizeof(topoCLP.c_str()), &dwBytesWritten, NULL);
+			lFilePosLow = indice * sizeof(topoCLP.c_str());
+			indice+=1;
+			SetFilePointer(hFile, lFilePosLow, NULL, FILE_BEGIN);
+			
+			//printf("Numero de bytes escritos = %d\n", dwBytesWritten);
+			//cout << "\nEXIBE DADO: " << topoCLP << "\n";
+			string LeArquivo;
+			printf("File Pointer = %d\n", lFilePosLow);
+			bStatus = ReadFile(hFile, &LeArquivo, sizeof(topoCLP.c_str()), &dwBytesRead, NULL);
+			if (bStatus == 0)  std::cerr << "\nErro na abertura Exibe Dados = " << GetLastError() << "\n";
+			cout << "\nFoi lido do arquivo: " << LeArquivo << endl;
+			printf("Numero de bytes lidos = %d\n", &dwBytesRead);
 			popCLP();
 		}
 		ReleaseMutex(hMutexCLP);
