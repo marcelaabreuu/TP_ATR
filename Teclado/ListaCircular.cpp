@@ -50,7 +50,7 @@ struct Node
 };
 
 
-string topo(LENGTHMAX,0), topoA(LENGTHMAX, 0), topoCLP(LENGTHMAX, 0);
+string topo(LENGTHMAX,0), topoA(LENGTHMAX, 0), topoCLP(LENGTHMAX+1, 0);
 
 Node* top = NULL;
 Node* topA = NULL;
@@ -427,7 +427,7 @@ DWORD WINAPI FuncCLPalarme(LPVOID id) //Alarme proveniente do clp, mesmo formato
 			string TIMESTAMP = tbuffer;
 
 			//Mensagem completa do alarme 
-			string msgAlarme = NSEQ + "#" + ORIGEM + "#" + CODIGO + "#" + TIMESTAMP;
+			string msgAlarme = NSEQ + "#" + ORIGEM + "#" + CODIGO + "#" + TIMESTAMP + "       ";
 
 			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
@@ -563,10 +563,12 @@ DWORD WINAPI FuncDados(LPVOID id)
 		FILE_ATTRIBUTE_NORMAL,
 		NULL);		// Template para atributos e flags
 	*/
+	
 	do {
+		
 		WaitForSingleObject(hInts[3], INFINITE); //Bloqueia se interruptor não sinalizado
 		WaitForSingleObject(hMutexCLP, INFINITE);
-		if (!isempty() && !Interruptores[4]) {
+		if (!isemptyCLP() && !Interruptores[4]) {
 			showTopCLP();
 			cout << "\nEXIBE DADO: " << topoCLP << "\n";
 			popCLP();
