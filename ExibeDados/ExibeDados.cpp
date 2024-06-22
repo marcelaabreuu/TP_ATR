@@ -11,6 +11,8 @@ using namespace std;
 
 HANDLE hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
 HANDLE hInterruptor = CreateEvent(NULL, TRUE, FALSE, "InterruptorD");
+
+//Arquivo em disco
 HANDLE hFile;
 DWORD dwBytesWritten;
 DWORD dwBytesRead;
