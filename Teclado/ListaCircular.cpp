@@ -41,13 +41,16 @@ int sizestack, sizestackA, sizestackCLP = 0;
 bool Interruptores[5] = { 0, 0, 0, 0, 0 };  //Interruptores[4] = ESC
 
 
+#define LENGTHMAX 29
+
 struct Node
 {
 	string data;
-	Node* link{};
+	Node* link;
 };
 
-string topo, topoA, topoCLP;
+
+string topo(LENGTHMAX,0), topoA(LENGTHMAX, 0), topoCLP(LENGTHMAX, 0);
 
 Node* top = NULL;
 Node* topA = NULL;
@@ -94,8 +97,8 @@ HANDLE hEventNFull;
 HANDLE Mutexes1A[2] = { hMutex1, hMutexA };
 HANDLE Mutexes1CLP[2] = { hMutex1, hMutexCLP };
 HANDLE hThread[7] = { hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado, hThreadAUX, hInterruptores };
+HANDLE pipe;
 
-string teclado;
 
 //Manipulacao de Stacks
 BOOL isempty() {
@@ -135,19 +138,22 @@ void push(string value) {
 	}
 }
 void pushA(string value) {
-	Node* ptrA = new Node();
-	ptrA->data = value;
-	ptrA->link = topA;
-	topA = ptrA;
-	sizestackA++;
-
+	if (sizestackA <= 100) {
+		Node* ptrA = new Node();
+		ptrA->data = value;
+		ptrA->link = topA;
+		topA = ptrA;
+		sizestackA++;
+	}
 }
 void pushCLP(string value) {
-	Node* ptrCLP = new Node();
-	ptrCLP->data = value;
-	ptrCLP->link = topA;
-	topCLP = ptrCLP;
-	sizestackCLP++;
+	if (sizestackCLP <= 100) {
+		Node* ptrCLP = new Node();
+		ptrCLP->data = value;
+		ptrCLP->link = topA;
+		topCLP = ptrCLP;
+		sizestackCLP++;
+	}
 }
 void pop()
 {
@@ -351,7 +357,7 @@ int main()
 	CloseHandle(hMutex1);
 	CloseHandle(hMutexA);
 	CloseHandle(hMutexCLP);
-
+	CloseHandle(pipe);
 	return EXIT_SUCCESS;
 }
 
@@ -383,7 +389,7 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 			WaitForSingleObject(hInts[1], INFINITE); //Bloqueia se Sinalizador não-sinalizado	
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			// Secao critica
-			if (sizestack <= 200) { // Se nao cheia, coloca alarme codigo 00 de pesagem
+			if (sizestack <= 200) { // Se nao cheia, coloca alarme de pesagem
 				push(msgPesagem);
 				if (!isempty()) {
 					showTop();
@@ -474,7 +480,6 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			if (sizestack <= 200) {// Se nao vazia, coloca indicador 55 de alarme pesagem
-				cout << "teste";
 				push(msgDado);
 				if (!isempty()) {
 					showTop();
@@ -492,13 +497,53 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 
 DWORD WINAPI FuncAlarme(LPVOID id)
 {
-	string teste;
+	while (1) // Espera conexão
+	{
+		pipe = CreateFile(
+			"\\\\.\\pipe\\my_pipe",
+			GENERIC_READ, // only need read access
+			FILE_SHARE_READ | FILE_SHARE_WRITE,
+			NULL,
+			OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL,
+			NULL
+		);
+
+		// Se o handle é válido pode usar o pipe
+			if (pipe != INVALID_HANDLE_VALUE)
+				break;
+
+		// Todas as instancias estão ocupadas, então espere pelo tempo default 
+		//if (WaitNamedPipe("\\\\.\\pipe\\my_pipe", NMPWAIT_USE_DEFAULT_WAIT) == 0)
+			//printf("\nEsperando por uma instancia do pipe..."); // Temporização abortada: o pipe ainda não foi criado
+
+	}
+	cout << "pipe aceito\n";
 	do {
 		WaitForSingleObject(hInts[0], INFINITE); //Bloqueia se interruptor não sinalizado
 		WaitForSingleObject(hMutexA, INFINITE);
 		if (!isemptyA() && !Interruptores[4]) {
+
 			showTopA();
-			cout << "\nEXIBE ALARME: " << topoA << "\n\n";
+			cout << "\nEXIBE ALARME: " << topoA << "\n";
+			const char* char_msg = topoA.c_str();
+			DWORD numBytesWritten = 0;
+			BOOL result = WriteFile(
+				pipe, // handle to our outbound pipe
+				char_msg, // data to send
+				sizeof(char_msg), // length of data to send (bytes)
+				&numBytesWritten, // will store actual amount of data sent
+				NULL // not using overlapped IO
+			);
+
+			if (result) {
+				wcout << "Number of bytes sent: " << numBytesWritten << endl;
+			}
+			else {
+				wcout << "Failed to send data." << endl;
+				// look up error code here using GetLastError()
+			}
+			
 			popA();
 		}
 		ReleaseMutex(hMutexA);
@@ -540,28 +585,28 @@ DWORD WINAPI ConsomeStackPrincipal(LPVOID id) {
 		if (!isempty()) {
 
 			if (topo.compare(7, 2, "55") == 0 || topo.compare(7, 2, "00") == 0) {
-				WaitForSingleObject(hMutex1, INFINITE);
-				WaitForSingleObject(hMutexA, INFINITE);
-				pushA(topo);
-				showTopA();
-				pop();
-				ReleaseMutex(hMutex1);
-				ReleaseMutex(hMutexA);
-
+				if (sizestackA <= 100) {
+					WaitForSingleObject(hMutex1, INFINITE);
+					WaitForSingleObject(hMutexA, INFINITE);
+					pushA(topo);
+					showTopA();
+					pop();
+					ReleaseMutex(hMutex1);
+					ReleaseMutex(hMutexA);
+				}
 			}
 			else if (topo.compare(7, 2, "99") == 0) {
-				WaitForSingleObject(hMutex1, INFINITE);
-				WaitForSingleObject(hMutexCLP, INFINITE);
-				pushCLP(topo);
-				showTopCLP();
-				pop();
-				ReleaseMutex(hMutex1);
-				ReleaseMutex(hMutexCLP);
+				if (sizestackCLP <= 100) {
+					WaitForSingleObject(hMutex1, INFINITE);
+					WaitForSingleObject(hMutexCLP, INFINITE);
+					pushCLP(topo);
+					showTopCLP();
+					pop();
+					ReleaseMutex(hMutex1);
+					ReleaseMutex(hMutexCLP);
+				}
 			}
 		}
-
-
-
 	} while (!Interruptores[4]);
 
 	return (0);
