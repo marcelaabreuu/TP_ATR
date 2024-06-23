@@ -564,17 +564,40 @@ DWORD WINAPI FuncDados(LPVOID id)
 		NULL);		// Template para atributos e flags
 	if (hFile == INVALID_HANDLE_VALUE)  std::cerr << "\nErro na criação do arquivo = " << GetLastError() << "\n";
 	
+	int indice = 0;
+
 	do {
-		
 		WaitForSingleObject(hInts[3], INFINITE); //Bloqueia se interruptor não sinalizado
 		WaitForSingleObject(hMutexCLP, INFINITE);
 		if (!isemptyCLP() && !Interruptores[4]) {
 			showTopCLP();
+
+			// Transforma a string em char
 			const char* char_dado = topoCLP.c_str(); //tamanho 28
-			bStatus = WriteFile(hFile, char_dado, sizeof(char_dado), &dwBytesWritten, NULL);
+
+			//Escreve no arquivo
+			bStatus = WriteFile(hFile, char_dado, 28, &dwBytesWritten, NULL);
 			if (bStatus == 0)  std::cerr << "\nErro na escrita de Dados = " << GetLastError() << "\n";
+
+			// Atualiza a posição para leitura
+			lFilePosLow = indice * 28;
+			SetFilePointer(hFile, lFilePosLow, NULL, FILE_BEGIN);
+			indice += 1;
+
+			
 			cout << "\nEXIBE DADO: " << char_dado << "\n";
 			popCLP();
+			/*
+			lFilePosLow = indice * 19;
+		indice += 1;
+		SetFilePointer(hFile, lFilePosLow, NULL, FILE_BEGIN);
+		printf("File Pointer = %d\n", lFilePosLow);
+		printf("Numero de bytes escritos = %d\n", dwBytesWritten);
+		bStatus = ReadFile(hFile, &MsgLida, 19, &dwBytesRead, NULL);
+		if (bStatus == 0)  std::cerr << "\nErro na abertura Exibe Dados = " << GetLastError() << "\n";
+		printf("\nEXIBE DADOS: %s \n", MsgLida);
+		printf("Numero de bytes lidos = %i\n", &dwBytesRead);
+			*/
 		}
 		ReleaseMutex(hMutexCLP);
 
