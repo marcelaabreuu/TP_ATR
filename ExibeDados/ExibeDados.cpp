@@ -27,15 +27,21 @@ bool estado = 0, ESC = 0;
 DWORD dwBytesLidos;
 DWORD WINAPI ThreadFunc(LPVOID index)
 {
-	char MsgLida[28];
+	char MsgLida[30] = {"Sem Dados Lidos              "};
 	while (!ESC)
 	{
 		WaitForSingleObject(hInterruptor, INFINITE);
 		WaitForSingleObject(hMutexArquivo, INFINITE);
+		SetFilePointer(hFile, -28, NULL, FILE_CURRENT);
 		bStatus = ReadFile(hFile, &MsgLida, 28, &dwBytesRead, NULL);
 		if (bStatus == 0)  std::cerr << "\nErro na leitura Exibe Dados = " << GetLastError() << "\n";
 		ReleaseMutex(hMutexArquivo);
-		cout << "\nEXIBE DADOS" << MsgLida << "\n";
+		printf("\nDados do processo: ");
+		for (int i = 0; i < 28; i++) {
+			printf("%c", MsgLida[i]);
+		}
+		printf("\n");
+		//cout << "\nEXIBE DADOS: %c[30]" << MsgLida << "\n";		
 		Sleep(500);
 	}
 	return(0);

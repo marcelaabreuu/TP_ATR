@@ -556,7 +556,7 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 	return(0);
 }
 
-DWORD WINAPI FuncDados(LPVOID id)
+DWORD WINAPI FuncDados(LPVOID id) //Captura os dados do processo da lista circular e envia para a tarefa "ExibeDados"
 {
 	hFile = CreateFile("processo.txt",
 		GENERIC_READ | GENERIC_WRITE,
@@ -569,7 +569,7 @@ DWORD WINAPI FuncDados(LPVOID id)
 	
 	int indice = 0;
 	char MsgLida[28];
-
+	WaitForSingleObject(hTimeOut, 20);
 	do {
 		WaitForSingleObject(hInts[3], INFINITE); //Bloqueia se interruptor não sinalizado
 		WaitForSingleObject(hMutexCLP, INFINITE);
@@ -585,15 +585,17 @@ DWORD WINAPI FuncDados(LPVOID id)
 			if (bStatus == 0)  std::cerr << "\nErro na escrita de Dados = " << GetLastError() << "\n";
 
 			// Atualiza a posição para leitura
-			lFilePosLow = indice * 28;
+			if (indice == 10) { indice = 0;  SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
+			};
+			/*lFilePosLow = indice * 28;
 			SetFilePointer(hFile, lFilePosLow, NULL, FILE_BEGIN);
+			cout << "\nNúmero da mensagem: " << indice << "\n";*/
 			indice += 1;
 			ReleaseMutex(hMutexArquivo);
-
-			cout << "\nEXIBE DADO: " << MsgLida << "\n";
 			popCLP();
 		}
 		ReleaseMutex(hMutexCLP);
+		WaitForSingleObject(hTimeOut, 500);
 
 	} while (!Interruptores[4]);
 	_endthreadex(0);
