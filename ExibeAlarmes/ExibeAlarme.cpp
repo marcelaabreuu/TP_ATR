@@ -4,8 +4,10 @@
 #include <iostream>
 #include <process.h>	
 #include <conio.h>  // _getch
-#define _CHECKERROR	1	// Ativa função CheckForError
 #include <tchar.h>
+#define _CHECKERROR	1	// Ativa função CheckForError
+#include "CheckForError.h"
+
 
 using namespace std;
 
@@ -17,63 +19,88 @@ HANDLE pipe;
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
 bool estado = 0, ESC = 0;
-
 DWORD dwBytesLidos;
+const char* textos[10] = { "Sobrecarga no motor principal. Reduzir carga ou desligar o equipamento.", 
+						   "Pressao alta no tanque de armazenamento. Verificar valvulas de alivio.", 
+						   "Nivel baixo no reservatorio de agua. Reabastecer imediatamente.", 
+						   "Parada de emergencia acionada. Verificar sistema de seguranca e reiniciar.",
+						   "Obstruçao detectada na esteira transportadora. Remover obstaculo e reiniciar.",
+						   "Motor sobreaquecido no setor C. Desligar e verificar ventilacao.",
+						   "Baixa pressao na linha de ar comprimido. Verificar compressor e tubulacoes.",
+						   "Sistema offline. Verificar conectividade e reiniciar servidores.",
+						   "Perda de comunicacao com PLC. Checar cabos e reiniciar controlador.",
+						   "Interferencia eletrica no sensor de proximidade. Verificar cabos e fonte de ruido."};
+
+
 
 DWORD WINAPI ThreadFunc(LPVOID index)
 {
+	DWORD dwErrorCode;			// Código de erro retornado por GetLastError()
+	BOOL bStatus;
+	char MyBuffer[128];
+	DWORD dwLength;
+	DWORD dwBytesRead;
+
+	DWORD numBytesRead = 0;
+
 	pipe = CreateNamedPipe(
-		"\\\\.\\pipe\\my_pipe", // name of the pipe
-		PIPE_ACCESS_INBOUND, // 1-way pipe -- send only
-		PIPE_TYPE_BYTE, // send data as a byte stream
-		2, // only allow 1 instance of this pipe
-		0, // no outbound buffer
-		0, // no inbound buffer
-		0, // use default wait time
-		NULL // use default security attributes
-	);
-		if (pipe == NULL || pipe == INVALID_HANDLE_VALUE) {
-			wcout << "Failed to create outbound pipe instance.";
-			// look up error code here using GetLastError()
-			system("pause");
-			return 1;
-		}
+		"\\\\.\\pipe\\myPipe",
+		PIPE_ACCESS_DUPLEX,	// Comunicação Full Duplex
+		PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
+		1,			// Número de instâncias
+		0,			// nOutBufferSize
+		0,			// nInBufferSize
+		15000,		// Timeout default para esperar por cliente
+		NULL);		// Atributos de segurança
+	
 	while (!ESC)
 	{
 		WaitForSingleObject(hInterruptor, INFINITE);
 
-		BOOL result = ConnectNamedPipe(pipe, NULL);
-			if (!result) {
-				wcout << "Falha ao conectar ao pipe." << endl;
-				// look up error code here using GetLastError()
-				CloseHandle(pipe); // close the pipe
-				system("pause");
-				return 1;
-			}
+		bStatus = ConnectNamedPipe(pipe, NULL); // Fica preso esperando conexão
+		if (bStatus) {
+			printf("\nCliente se conectou com sucesso");
+		}
+		else {
+			dwErrorCode = GetLastError();
+			if (dwErrorCode == ERROR_PIPE_CONNECTED) {
+				//printf("\nCliente já havia se conectado");
+			}  // if
+			else if (dwErrorCode == ERROR_NO_DATA) {
+				printf("\nCliente fechou seu handle");
+				return 0;
+			} // if
+			else
+				cout << "Erro checkerror\n";
+		}  // else
 
-		cout << "Lendo dados vindo do pipe..." << endl;
-
-		// The read operation will block until there is data to read
-		wchar_t buffer[128];
-		DWORD numBytesRead = 0;
+		
+		
 		BOOL result2 = ReadFile(
 			pipe,
-			buffer, // the data from the pipe will be put here
-			127 * sizeof(wchar_t), // number of bytes allocated
-			&numBytesRead, // this will store number of bytes actually read
+			&MyBuffer, 
+			127 * sizeof(wchar_t),
+			&dwBytesRead, // this will store number of bytes actually read
 			NULL // not using overlapped IO
 		);
 			if (result2) {
-				buffer[numBytesRead / sizeof(wchar_t)] = '\0'; // null terminate the string
-				cout << "\nEXIBE ALARMES\n";
-				cout << "Number of bytes read: " << numBytesRead << endl;
-				cout << "Mensagem lida do pipe: " << buffer << endl;
+				
+				MyBuffer[dwBytesRead / sizeof(wchar_t)] = '\0';
+				string str(MyBuffer);
+				string NSEG = str.substr(0, 6);
+				string TIME = str.substr(13, 8);
+				string ORIGEM = str.substr(10, 2);
+				//cout << "\nEXIBE ALARMES\n";
+
+				string msg_total = TIME + " NSEG: " + NSEG + " ORIGEM: " + ORIGEM + " " + textos[rand() % 10];
+				//cout << "Number of bytes read: " << dwBytesRead << endl;
+				cout << msg_total << endl;
 			}
 			else {
 				cout << "Falha ao ler mensagem do pipe." << endl;
 			}
 
-		Sleep(500);
+		
 	}
 	return(0);
 }
