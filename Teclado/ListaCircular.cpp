@@ -584,15 +584,13 @@ DWORD WINAPI FuncDados(LPVOID id)
 			SetFilePointer(hFile, lFilePosLow, NULL, FILE_BEGIN);
 			indice += 1;
 
-			
+			//Le o arquivo
+			bStatus = ReadFile(hFile, &MsgLida, 19, &dwBytesRead, NULL);
+			if (bStatus == 0)  std::cerr << "\nErro na leitura Exibe Dados = " << GetLastError() << "\n";
+
 			cout << "\nEXIBE DADO: " << char_dado << "\n";
 			popCLP();
 			/*
-			lFilePosLow = indice * 19;
-		indice += 1;
-		SetFilePointer(hFile, lFilePosLow, NULL, FILE_BEGIN);
-		printf("File Pointer = %d\n", lFilePosLow);
-		printf("Numero de bytes escritos = %d\n", dwBytesWritten);
 		bStatus = ReadFile(hFile, &MsgLida, 19, &dwBytesRead, NULL);
 		if (bStatus == 0)  std::cerr << "\nErro na abertura Exibe Dados = " << GetLastError() << "\n";
 		printf("\nEXIBE DADOS: %s \n", MsgLida);
