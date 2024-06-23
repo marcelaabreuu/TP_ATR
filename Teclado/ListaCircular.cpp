@@ -542,6 +542,7 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 			);
 		}
 		ReleaseMutex(hMutexA);
+		sizestackA--;
 		WaitForSingleObject(hTimeOut, 500);
 
 	} while (!Interruptores[4]);
@@ -581,6 +582,7 @@ DWORD WINAPI FuncDados(LPVOID id) //Captura os dados do processo da lista circul
 			}
 			else { indice += 1; }
 			ReleaseMutex(hMutexArquivo);
+			sizestackCLP--;
 		}
 		ReleaseMutex(hMutexCLP);
 		WaitForSingleObject(hTimeOut, 500);
