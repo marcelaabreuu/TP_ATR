@@ -361,6 +361,7 @@ int main()
 	CloseHandle(hMutexA);
 	CloseHandle(hMutexCLP);
 	CloseHandle(pipe);
+	CloseHandle(hFile);
 	return EXIT_SUCCESS;
 }
 
@@ -554,9 +555,10 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 				// look up error code here using GetLastError()
 			}
 			
-			popA();
+			//popA();
 		}
 		ReleaseMutex(hMutexA);
+		WaitForSingleObject(hTimeOut, 500);
 
 	} while (!Interruptores[4]);
 	_endthreadex(0);
@@ -591,9 +593,9 @@ DWORD WINAPI FuncDados(LPVOID id) //Captura os dados do processo da lista circul
 			if (bStatus == 0)  std::cerr << "\nErro na escrita de Dados = " << GetLastError() << "\n";
 
 			// Atualiza a posição para leitura
-			if (indice == 10) { indice = 0;  SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
-			};
-			indice += 1;
+			if (indice == 9) { indice = 0;  SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
+			}
+			else { indice += 1; }
 			ReleaseMutex(hMutexArquivo);
 		}
 		ReleaseMutex(hMutexCLP);

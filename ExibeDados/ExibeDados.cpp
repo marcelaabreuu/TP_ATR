@@ -13,6 +13,8 @@ HANDLE hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
 HANDLE hInterruptor = CreateEvent(NULL, TRUE, FALSE, "InterruptorD");
 BOOL bStatus;
 
+HANDLE hTimeOut = CreateEvent(NULL, TRUE, FALSE, "EvTimeOut"); //Evento nunca disparado, usado para temporizacao
+
 //Arquivo em disco
 HANDLE hFile;
 DWORD dwBytesWritten;
@@ -32,7 +34,7 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 	{
 		WaitForSingleObject(hInterruptor, INFINITE);
 		WaitForSingleObject(hMutexArquivo, INFINITE);
-		SetFilePointer(hFile, -28, NULL, FILE_BEGIN);
+		SetFilePointer(hFile, -28, NULL, FILE_CURRENT);
 		bStatus = ReadFile(hFile, &MsgLida, 28, &dwBytesRead, NULL);
 		if (bStatus == 0)  std::cerr << "\nErro na leitura Exibe Dados = " << GetLastError() << "\n";
 		ReleaseMutex(hMutexArquivo);
@@ -40,10 +42,10 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 		for (int i = 0; i < 28; i++) {
 			printf("%c", MsgLida[i]);
 		}
-		printf("\n");
-		//cout << "\nEXIBE DADOS: %c[30]" << MsgLida << "\n";		
-		Sleep(500);
+		printf("\n");	
+		WaitForSingleObject(hTimeOut, 500);
 	}
+	_endthreadex(0);
 	return(0);
 }
 

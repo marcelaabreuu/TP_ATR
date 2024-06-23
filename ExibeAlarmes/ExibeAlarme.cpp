@@ -102,6 +102,7 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 
 		
 	}
+	_endthreadex(0);
 	return(0);
 }
 
