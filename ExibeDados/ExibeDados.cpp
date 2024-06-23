@@ -35,12 +35,26 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 		SetFilePointer(hFile, -28, NULL, FILE_BEGIN);
 		bStatus = ReadFile(hFile, &MsgLida, 28, &dwBytesRead, NULL);
 		if (bStatus == 0)  std::cerr << "\nErro na leitura Exibe Dados = " << GetLastError() << "\n";
-		ReleaseMutex(hMutexArquivo);
+		
 		printf("\nDados do processo: ");
-		for (int i = 0; i < 28; i++) {
-			printf("%c", MsgLida[i]);
-		}
-		printf("\n");
+			
+			string str(MsgLida);
+			string NSEG = str.substr(0, 6);
+			string TIME = str.substr(20, 8);
+			string VEL = str.substr(10, 5);
+			string IC = str.substr(16, 1);
+			string FC = str.substr(18, 1);
+
+			if (IC == "1") IC = "Ligado";
+			else IC = "Desligado";
+
+			if (FC == "1") FC = "Ligado";
+			else FC = "Desligado";
+			
+			string msg_total = TIME + " NSEG: " + NSEG + " VEL: " + VEL + " SENSOR IC: " + IC + " SENSOR FC: " + FC;
+			cout << msg_total << endl;
+			ReleaseMutex(hMutexArquivo);
+
 		//cout << "\nEXIBE DADOS: %c[30]" << MsgLida << "\n";		
 		Sleep(500);
 	}

@@ -207,14 +207,14 @@ void showTop()
 {
 	if (!isempty()) {
 		topo = top->data;
-		cout << "Elemento no topo Lista 1:" << topo << "\n";
+		//cout << "Elemento no topo Lista 1:" << topo << "\n";
 	}
 }
 void showTopA()
 {
 	if (!isemptyA()) {
 		topoA = topA->data;
-		cout << "Elemento no topo alarme:" << topoA << "\n";
+		//cout << "Elemento no topo alarme:" << topoA << "\n";
 	}
 
 }
@@ -222,7 +222,7 @@ void showTopCLP()
 {
 	if (!isemptyCLP()) {
 		topoCLP = topCLP->data;
-		cout << "Elemento no topo dado:" << topoCLP << "\n";
+		//cout << "Elemento no topo dado:" << topoCLP << "\n";
 	}
 }
 

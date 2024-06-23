@@ -88,8 +88,8 @@ int main()
     std::cout << "b: Iniciar/Pausar sistema de pesagem\n";
     std::cout << "c: Iniciar/Pausar leitura do CLP\n";
     std::cout << "d: Iniciar/Pausar captura de dados\n";
-    std::cout << "1: Iniciar/Pausar exibição de alrmes\n";
-    std::cout << "2: Iniciar/Pausar exibição de dados\n";
+    std::cout << "1: Iniciar/Pausar exibicao de alrmes\n";
+    std::cout << "2: Iniciar/Pausar exibicao de dados\n";
 
     char action;
 
