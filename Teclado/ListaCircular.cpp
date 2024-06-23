@@ -388,7 +388,7 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 
 			//Mensagem completa do alarme 
 			string msgPesagem = NSEQ + "#" + ORIGEM + "#" + CODIGO + "#" + TIMESTAMP;
-
+			
 			WaitForSingleObject(hInts[1], INFINITE); //Bloqueia se Sinalizador não-sinalizado	
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			// Secao critica
@@ -399,8 +399,8 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 				}
 			}
 			ReleaseMutex(hMutex1);
-
-			WaitForSingleObject(hTimeOut, 1000 * (rand() % 5 + 1)); //Temporizador
+			//Temporizador: alarme de pesagem
+			WaitForSingleObject(hTimeOut, 1000 * (rand() % 5 + 1)); 
 
 		}
 	} while (!Interruptores[4]);
@@ -431,7 +431,7 @@ DWORD WINAPI FuncCLPalarme(LPVOID id) //Alarme proveniente do clp, mesmo formato
 
 			//Mensagem completa do alarme 
 			string msgAlarme = NSEQ + "#" + ORIGEM + "#" + CODIGO + "#" + TIMESTAMP + "       ";
-
+			
 			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			if (sizestack <= 200) {  // Se nao vazia, coloca indicador 55 de alarme pesagem
@@ -442,7 +442,8 @@ DWORD WINAPI FuncCLPalarme(LPVOID id) //Alarme proveniente do clp, mesmo formato
 			}
 			ReleaseMutex(hMutex1);
 
-			WaitForSingleObject(hTimeOut, 1000 * (rand() % 5 + 1)); //Temporizador
+			//Temporizador alarme do CLP
+			WaitForSingleObject(hTimeOut, 1000 * (rand() % 5 + 1)); 
 		}
 	} while (!Interruptores[4]);
 	_endthreadex(0);
@@ -479,7 +480,7 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 
 			//Mensagem completa do alarme 
 			string msgDado = NSEQ + "#" + ORIGEM + "#" + VEL + "#" + SENSORIC + "#" + SENSORFC + "#" + TIMESTAMP;
-
+			
 			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			if (sizestack <= 200) {// Se nao vazia, coloca indicador 55 de alarme pesagem
@@ -491,7 +492,8 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 			}
 			ReleaseMutex(hMutex1);
 
-			WaitForSingleObject(hTimeOut, 500); //Temporizador
+			//Temporizador dados do CLP
+			WaitForSingleObject(hTimeOut, 500); 
 		}
 	} while (!Interruptores[4]);
 	_endthreadex(0);

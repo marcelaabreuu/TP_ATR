@@ -24,7 +24,7 @@ const char* textos[10] = { "Sobrecarga no motor principal. Reduzir carga ou desl
 						   "Pressao alta no tanque de armazenamento. Verificar valvulas de alivio.", 
 						   "Nivel baixo no reservatorio de agua. Reabastecer imediatamente.", 
 						   "Parada de emergencia acionada. Verificar sistema de seguranca e reiniciar.",
-						   "Obstruçao detectada na esteira transportadora. Remover obstaculo e reiniciar.",
+						   "Obstrucao detectada na esteira transportadora. Remover obstaculo e reiniciar.",
 						   "Motor sobreaquecido no setor C. Desligar e verificar ventilacao.",
 						   "Baixa pressao na linha de ar comprimido. Verificar compressor e tubulacoes.",
 						   "Sistema offline. Verificar conectividade e reiniciar servidores.",
@@ -40,8 +40,8 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 	char MyBuffer[128];
 	DWORD dwLength;
 	DWORD dwBytesRead;
-
 	DWORD numBytesRead = 0;
+	string NSEGant, NSEG;
 
 	pipe = CreateNamedPipe(
 		"\\\\.\\pipe\\myPipe",
@@ -83,23 +83,25 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 			&dwBytesRead, // this will store number of bytes actually read
 			NULL // not using overlapped IO
 		);
-			if (result2) {
-				
+			if (result2) {				
 				MyBuffer[dwBytesRead / sizeof(wchar_t)] = '\0';
-				string str(MyBuffer);
-				string NSEG = str.substr(0, 6);
-				string TIME = str.substr(13, 8);
-				string ORIGEM = str.substr(10, 2);
-				//cout << "\nEXIBE ALARMES\n";
 
-				string msg_total = TIME + " NSEG: " + NSEG + " ORIGEM: " + ORIGEM + " " + textos[rand() % 10];
-				//cout << "Number of bytes read: " << dwBytesRead << endl;
-				cout << msg_total << endl;
+					string str(MyBuffer);
+					NSEG = str.substr(0, 6);
+					string TIME = str.substr(13, 8);
+					string ORIGEM = str.substr(10, 2);
+					//cout << "\nEXIBE ALARMES\n";
+				if (NSEGant != NSEG) {
+					string msg_total = TIME + " NSEG: " + NSEG + " ORIGEM: " + ORIGEM + " " + textos[rand() % 10];
+					//cout << "Number of bytes read: " << dwBytesRead << endl;
+					cout << msg_total << endl;
+				}
 			}
 			else {
 				cout << "Falha ao ler mensagem do pipe." << endl;
 			}
 
+			NSEGant = NSEG; 
 		
 	}
 	return(0);
