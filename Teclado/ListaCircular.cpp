@@ -98,6 +98,7 @@ HANDLE Mutexes1A[2] = { hMutex1, hMutexA };
 HANDLE Mutexes1CLP[2] = { hMutex1, hMutexCLP };
 HANDLE hThread[7] = { hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado, hThreadAUX, hInterruptores };
 HANDLE pipe;
+HANDLE hMutexArquivo;
 
 
 //Manipulacao de Stacks
@@ -241,6 +242,7 @@ int main()
 	hMutex1 = CreateMutex(NULL, FALSE, "Mutex1");
 	hMutexA = CreateMutex(NULL, FALSE, "MutexA");
 	hMutexCLP = CreateMutex(NULL, FALSE, "MutexCLP");
+	hMutexArquivo = CreateMutex(NULL, FALSE, "MutexArquivo");
 
 	hEventNFull = CreateEvent(NULL, TRUE, TRUE, "EventoNFull");
 
@@ -348,6 +350,7 @@ int main()
 	CloseHandle(hEventD);
 	CloseHandle(hEventESC);
 	CloseHandle(hEvents);
+	CloseHandle(hMutexArquivo);
 
 	for (int k = 0; k < 4; k++) {
 		CloseHandle(hInts[k]);
@@ -553,27 +556,46 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 	return(0);
 }
 
-DWORD WINAPI FuncDados(LPVOID id)
+DWORD WINAPI FuncDados(LPVOID id) //Captura os dados do processo da lista circular e envia para a tarefa "ExibeDados"
 {
-	/*hFile = CreateFile("processo.txt",
+	hFile = CreateFile("processo.txt",
 		GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE, // abre para leitura e escrita
 		NULL,		// atributos de segurança
 		OPEN_ALWAYS,// cria novo arquivo caso ele não exista, abre se já existe
 		FILE_ATTRIBUTE_NORMAL,
 		NULL);		// Template para atributos e flags
-	*/
+	if (hFile == INVALID_HANDLE_VALUE)  std::cerr << "\nErro na criação do arquivo = " << GetLastError() << "\n";
 	
+	int indice = 0;
+	char MsgLida[28];
+	WaitForSingleObject(hTimeOut, 20);
 	do {
-		
 		WaitForSingleObject(hInts[3], INFINITE); //Bloqueia se interruptor não sinalizado
 		WaitForSingleObject(hMutexCLP, INFINITE);
 		if (!isemptyCLP() && !Interruptores[4]) {
 			showTopCLP();
-			cout << "\nEXIBE DADO: " << topoCLP << "\n";
+
+			// Transforma a string em char
+			const char* char_dado = topoCLP.c_str(); //tamanho 28
+
+			//Escreve no arquivo
+			WaitForSingleObject(hMutexArquivo, INFINITE);
+			bStatus = WriteFile(hFile, char_dado, 28, &dwBytesWritten, NULL);
+			if (bStatus == 0)  std::cerr << "\nErro na escrita de Dados = " << GetLastError() << "\n";
+
+			// Atualiza a posição para leitura
+			if (indice == 10) { indice = 0;  SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
+			};
+			/*lFilePosLow = indice * 28;
+			SetFilePointer(hFile, lFilePosLow, NULL, FILE_BEGIN);
+			cout << "\nNúmero da mensagem: " << indice << "\n";*/
+			indice += 1;
+			ReleaseMutex(hMutexArquivo);
 			popCLP();
 		}
 		ReleaseMutex(hMutexCLP);
+		WaitForSingleObject(hTimeOut, 500);
 
 	} while (!Interruptores[4]);
 	_endthreadex(0);
