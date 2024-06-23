@@ -555,14 +555,14 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 
 DWORD WINAPI FuncDados(LPVOID id)
 {
-	/*hFile = CreateFile("processo.txt",
+	hFile = CreateFile("processo.txt",
 		GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE, // abre para leitura e escrita
 		NULL,		// atributos de segurança
 		OPEN_ALWAYS,// cria novo arquivo caso ele não exista, abre se já existe
 		FILE_ATTRIBUTE_NORMAL,
 		NULL);		// Template para atributos e flags
-	*/
+	if (hFile == INVALID_HANDLE_VALUE)  std::cerr << "\nErro na criação do arquivo = " << GetLastError() << "\n";
 	
 	do {
 		
@@ -570,7 +570,10 @@ DWORD WINAPI FuncDados(LPVOID id)
 		WaitForSingleObject(hMutexCLP, INFINITE);
 		if (!isemptyCLP() && !Interruptores[4]) {
 			showTopCLP();
-			cout << "\nEXIBE DADO: " << topoCLP << "\n";
+			const char* char_dado = topoCLP.c_str(); //tamanho 28
+			bStatus = WriteFile(hFile, char_dado, sizeof(char_dado), &dwBytesWritten, NULL);
+			if (bStatus == 0)  std::cerr << "\nErro na escrita de Dados = " << GetLastError() << "\n";
+			cout << "\nEXIBE DADO: " << char_dado << "\n";
 			popCLP();
 		}
 		ReleaseMutex(hMutexCLP);
