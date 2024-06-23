@@ -568,7 +568,6 @@ DWORD WINAPI FuncDados(LPVOID id) //Captura os dados do processo da lista circul
 	if (hFile == INVALID_HANDLE_VALUE)  std::cerr << "\nErro na criação do arquivo = " << GetLastError() << "\n";
 	
 	int indice = 0;
-	char MsgLida[28];
 	WaitForSingleObject(hTimeOut, 20);
 	do {
 		WaitForSingleObject(hInts[3], INFINITE); //Bloqueia se interruptor não sinalizado
@@ -589,7 +588,6 @@ DWORD WINAPI FuncDados(LPVOID id) //Captura os dados do processo da lista circul
 			};
 			indice += 1;
 			ReleaseMutex(hMutexArquivo);
-			//popCLP();
 		}
 		ReleaseMutex(hMutexCLP);
 		WaitForSingleObject(hTimeOut, 500);
