@@ -32,7 +32,7 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 	{
 		WaitForSingleObject(hInterruptor, INFINITE);
 		WaitForSingleObject(hMutexArquivo, INFINITE);
-		SetFilePointer(hFile, -28, NULL, FILE_CURRENT);
+		SetFilePointer(hFile, -28, NULL, FILE_BEGIN);
 		bStatus = ReadFile(hFile, &MsgLida, 28, &dwBytesRead, NULL);
 		if (bStatus == 0)  std::cerr << "\nErro na leitura Exibe Dados = " << GetLastError() << "\n";
 		ReleaseMutex(hMutexArquivo);
