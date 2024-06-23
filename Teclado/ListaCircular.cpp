@@ -517,10 +517,6 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 		// Se o handle é válido pode usar o pipe
 			if (pipe != INVALID_HANDLE_VALUE)
 				break;
-
-		// Todas as instancias estão ocupadas, então espere pelo tempo default 
-			/*if (WaitNamedPipe("\\\\.\\pipe\\my_pipe", NMPWAIT_USE_DEFAULT_WAIT) == 0)
-			cout<<"\nEsperando por uma instancia do pipe..."; // Temporização abortada: o pipe ainda não foi criado*/
 	}
 	
 	do {
@@ -544,18 +540,6 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 				&numBytesWritten, // will store actual amount of data sent
 				NULL // not using overlapped IO
 			);
-
-			if (result) {
-				wcout << "Number of bytes sent: " << numBytesWritten << endl;
-				wcout << "Message sent: " << char_msg << endl;
-
-			}
-			else {
-				wcout << "Failed to send data." << endl;
-				// look up error code here using GetLastError()
-			}
-			
-			//popA();
 		}
 		ReleaseMutex(hMutexA);
 		WaitForSingleObject(hTimeOut, 500);
@@ -593,7 +577,7 @@ DWORD WINAPI FuncDados(LPVOID id) //Captura os dados do processo da lista circul
 			if (bStatus == 0)  std::cerr << "\nErro na escrita de Dados = " << GetLastError() << "\n";
 
 			// Atualiza a posição para leitura
-			if (indice == 9) { indice = 0;  SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
+			if (indice == 99) { indice = 0;  SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
 			}
 			else { indice += 1; }
 			ReleaseMutex(hMutexArquivo);
@@ -639,17 +623,3 @@ DWORD WINAPI ConsomeStackPrincipal(LPVOID id) {
 
 	return (0);
 }
-
-
-/*WriteFile(hFile, topoCLP.c_str(), sizeof(topoCLP.c_str()), &dwBytesWritten, NULL);
-			lFilePosLow = indice * sizeof(topoCLP.c_str());
-			indice+=1;
-			SetFilePointer(hFile, lFilePosLow, NULL, FILE_BEGIN);
-
-			//printf("Numero de bytes escritos = %d\n", dwBytesWritten);
-			string LeArquivo;
-			printf("File Pointer = %d\n", lFilePosLow);
-			bStatus = ReadFile(hFile, &LeArquivo, sizeof(topoCLP.c_str()), &dwBytesRead, NULL);
-			if (bStatus == 0)  std::cerr << "\nErro na abertura Exibe Dados = " << GetLastError() << "\n";
-			cout << "\nFoi lido do arquivo: " << LeArquivo << endl;
-			printf("Numero de bytes lidos = %d\n", &dwBytesRead);*/

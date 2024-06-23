@@ -34,12 +34,10 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 	{
 		WaitForSingleObject(hInterruptor, INFINITE);
 		WaitForSingleObject(hMutexArquivo, INFINITE);
-		SetFilePointer(hFile, -28, NULL, FILE_CURRENT);
 		bStatus = ReadFile(hFile, &MsgLida, 28, &dwBytesRead, NULL);
 		if (bStatus == 0)  std::cerr << "\nErro na leitura Exibe Dados = " << GetLastError() << "\n";
-		
+		ReleaseMutex(hMutexArquivo);
 		printf("\nDados do processo: ");
-			
 			string str(MsgLida);
 			string NSEG = str.substr(0, 6);
 			string TIME = str.substr(20, 8);
@@ -52,12 +50,11 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 
 			if (FC == "1") FC = "Ligado";
 			else FC = "Desligado";
-			
+
 			string msg_total = TIME + " NSEG: " + NSEG + " VEL: " + VEL + " SENSOR IC: " + IC + " SENSOR FC: " + FC;
 			cout << msg_total << endl;
-			ReleaseMutex(hMutexArquivo);
 
-		//cout << "\nEXIBE DADOS: %c[30]" << MsgLida << "\n";		
+				
 		Sleep(500);
 	}
 	_endthreadex(0);
@@ -83,9 +80,6 @@ int main()
 		CREATE_ALWAYS,// cria novo arquivo caso ele n�o exista, abre se j� existe
 		FILE_ATTRIBUTE_NORMAL,
 		NULL);		// Template para atributos e flags
-
-	//WriteFile(hFile, "Escreve no arquivo", sizeof(string), &dwBytesWritten, NULL);
-	//printf("Numero de bytes escritos = %d\n", dwBytesWritten);
 
 	hThread = (HANDLE)_beginthreadex(
 		NULL,
