@@ -590,10 +590,6 @@ DWORD WINAPI FuncDados(LPVOID id)
 			indice += 1;
 			ReleaseMutex(hMutexArquivo);
 
-			//Le o arquivo
-			bStatus = ReadFile(hFile, &MsgLida, 28, &dwBytesRead, NULL);
-			if (bStatus == 0)  std::cerr << "\nErro na leitura Exibe Dados = " << GetLastError() << "\n";
-
 			cout << "\nEXIBE DADO: " << MsgLida << "\n";
 			popCLP();
 		}
