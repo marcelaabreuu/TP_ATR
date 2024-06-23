@@ -98,6 +98,7 @@ HANDLE Mutexes1A[2] = { hMutex1, hMutexA };
 HANDLE Mutexes1CLP[2] = { hMutex1, hMutexCLP };
 HANDLE hThread[7] = { hThreadPesagem, hThreadCLP, hThreadAlarme, hThreadDados, hThreadCLPdado, hThreadAUX, hInterruptores };
 HANDLE pipe;
+HANDLE hMutexArquivo;
 
 
 //Manipulacao de Stacks
@@ -241,6 +242,7 @@ int main()
 	hMutex1 = CreateMutex(NULL, FALSE, "Mutex1");
 	hMutexA = CreateMutex(NULL, FALSE, "MutexA");
 	hMutexCLP = CreateMutex(NULL, FALSE, "MutexCLP");
+	hMutexArquivo = CreateMutex(NULL, FALSE, "MutexArquivo");
 
 	hEventNFull = CreateEvent(NULL, TRUE, TRUE, "EventoNFull");
 
@@ -348,6 +350,7 @@ int main()
 	CloseHandle(hEventD);
 	CloseHandle(hEventESC);
 	CloseHandle(hEvents);
+	CloseHandle(hMutexArquivo);
 
 	for (int k = 0; k < 4; k++) {
 		CloseHandle(hInts[k]);
@@ -565,6 +568,7 @@ DWORD WINAPI FuncDados(LPVOID id)
 	if (hFile == INVALID_HANDLE_VALUE)  std::cerr << "\nErro na criação do arquivo = " << GetLastError() << "\n";
 	
 	int indice = 0;
+	char MsgLida[28];
 
 	do {
 		WaitForSingleObject(hInts[3], INFINITE); //Bloqueia se interruptor não sinalizado
@@ -576,6 +580,7 @@ DWORD WINAPI FuncDados(LPVOID id)
 			const char* char_dado = topoCLP.c_str(); //tamanho 28
 
 			//Escreve no arquivo
+			WaitForSingleObject(hMutexArquivo, INFINITE);
 			bStatus = WriteFile(hFile, char_dado, 28, &dwBytesWritten, NULL);
 			if (bStatus == 0)  std::cerr << "\nErro na escrita de Dados = " << GetLastError() << "\n";
 
@@ -583,19 +588,14 @@ DWORD WINAPI FuncDados(LPVOID id)
 			lFilePosLow = indice * 28;
 			SetFilePointer(hFile, lFilePosLow, NULL, FILE_BEGIN);
 			indice += 1;
+			ReleaseMutex(hMutexArquivo);
 
 			//Le o arquivo
-			bStatus = ReadFile(hFile, &MsgLida, 19, &dwBytesRead, NULL);
+			bStatus = ReadFile(hFile, &MsgLida, 28, &dwBytesRead, NULL);
 			if (bStatus == 0)  std::cerr << "\nErro na leitura Exibe Dados = " << GetLastError() << "\n";
 
-			cout << "\nEXIBE DADO: " << char_dado << "\n";
+			cout << "\nEXIBE DADO: " << MsgLida << "\n";
 			popCLP();
-			/*
-		bStatus = ReadFile(hFile, &MsgLida, 19, &dwBytesRead, NULL);
-		if (bStatus == 0)  std::cerr << "\nErro na abertura Exibe Dados = " << GetLastError() << "\n";
-		printf("\nEXIBE DADOS: %s \n", MsgLida);
-		printf("Numero de bytes lidos = %i\n", &dwBytesRead);
-			*/
 		}
 		ReleaseMutex(hMutexCLP);
 

@@ -11,12 +11,14 @@ using namespace std;
 
 HANDLE hEventESC = CreateEvent(NULL, TRUE, FALSE, "ESC");
 HANDLE hInterruptor = CreateEvent(NULL, TRUE, FALSE, "InterruptorD");
+BOOL bStatus;
 
 //Arquivo em disco
 HANDLE hFile;
 DWORD dwBytesWritten;
 DWORD dwBytesRead;
 LONG lFilePosLow;
+HANDLE hMutexArquivo;
 
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
@@ -25,10 +27,15 @@ bool estado = 0, ESC = 0;
 DWORD dwBytesLidos;
 DWORD WINAPI ThreadFunc(LPVOID index)
 {
+	char MsgLida[28];
 	while (!ESC)
 	{
 		WaitForSingleObject(hInterruptor, INFINITE);
-		cout << "\nEXIBE DADOS\n";
+		WaitForSingleObject(hMutexArquivo, INFINITE);
+		bStatus = ReadFile(hFile, &MsgLida, 28, &dwBytesRead, NULL);
+		if (bStatus == 0)  std::cerr << "\nErro na leitura Exibe Dados = " << GetLastError() << "\n";
+		ReleaseMutex(hMutexArquivo);
+		cout << "\nEXIBE DADOS" << MsgLida << "\n";
 		Sleep(500);
 	}
 	return(0);
@@ -44,6 +51,7 @@ int main()
 	DWORD dwThreadId;
 	WIN32_FIND_DATA FindFileData;
 	int i = 0;
+	hMutexArquivo = CreateMutex(NULL, FALSE, "MutexArquivo");
 
 	hFile = CreateFile("processo.txt",
 		GENERIC_READ | GENERIC_WRITE,
