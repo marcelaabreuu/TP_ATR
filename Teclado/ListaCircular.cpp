@@ -503,8 +503,9 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 	while (1) // Espera conexão
 	{
 		pipe = CreateFile(
-			"\\\\.\\pipe\\my_pipe",
-			GENERIC_READ, // only need read access
+			"\\\\.\\pipe\\myPipe",
+			GENERIC_READ |  // acesso para leitura e escrita 
+			GENERIC_WRITE, // only need read access
 			FILE_SHARE_READ | FILE_SHARE_WRITE,
 			NULL,
 			OPEN_EXISTING,
@@ -517,30 +518,36 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 				break;
 
 		// Todas as instancias estão ocupadas, então espere pelo tempo default 
-		//if (WaitNamedPipe("\\\\.\\pipe\\my_pipe", NMPWAIT_USE_DEFAULT_WAIT) == 0)
-			//printf("\nEsperando por uma instancia do pipe..."); // Temporização abortada: o pipe ainda não foi criado
-
+			/*if (WaitNamedPipe("\\\\.\\pipe\\my_pipe", NMPWAIT_USE_DEFAULT_WAIT) == 0)
+			cout<<"\nEsperando por uma instancia do pipe..."; // Temporização abortada: o pipe ainda não foi criado*/
 	}
-	cout << "pipe aceito\n";
+	
 	do {
 		WaitForSingleObject(hInts[0], INFINITE); //Bloqueia se interruptor não sinalizado
 		WaitForSingleObject(hMutexA, INFINITE);
 		if (!isemptyA() && !Interruptores[4]) {
 
 			showTopA();
-			cout << "\nEXIBE ALARME: " << topoA << "\n";
+			
 			const char* char_msg = topoA.c_str();
+			int nChars = MultiByteToWideChar(CP_ACP, 0, char_msg, -1, NULL, 0);
+			const WCHAR* mensagem;
+			mensagem = new WCHAR[nChars];
+			MultiByteToWideChar(CP_ACP, 0, char_msg, -1, (LPWSTR)mensagem, nChars);
+
 			DWORD numBytesWritten = 0;
 			BOOL result = WriteFile(
 				pipe, // handle to our outbound pipe
 				char_msg, // data to send
-				sizeof(char_msg), // length of data to send (bytes)
+				wcslen(mensagem) * sizeof(wchar_t), // length of data to send (bytes)
 				&numBytesWritten, // will store actual amount of data sent
 				NULL // not using overlapped IO
 			);
 
 			if (result) {
 				wcout << "Number of bytes sent: " << numBytesWritten << endl;
+				wcout << "Message sent: " << char_msg << endl;
+
 			}
 			else {
 				wcout << "Failed to send data." << endl;
