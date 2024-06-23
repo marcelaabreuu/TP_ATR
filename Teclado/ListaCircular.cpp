@@ -587,12 +587,9 @@ DWORD WINAPI FuncDados(LPVOID id) //Captura os dados do processo da lista circul
 			// Atualiza a posição para leitura
 			if (indice == 10) { indice = 0;  SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
 			};
-			/*lFilePosLow = indice * 28;
-			SetFilePointer(hFile, lFilePosLow, NULL, FILE_BEGIN);
-			cout << "\nNúmero da mensagem: " << indice << "\n";*/
 			indice += 1;
 			ReleaseMutex(hMutexArquivo);
-			popCLP();
+			//popCLP();
 		}
 		ReleaseMutex(hMutexCLP);
 		WaitForSingleObject(hTimeOut, 500);
