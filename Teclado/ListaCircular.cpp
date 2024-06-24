@@ -224,7 +224,6 @@ void showTopCLP()
 {
 	if (!isemptyCLP()) {
 		topoCLP = topCLP->data;
-		//cout << "Elemento no topo dado:" << topoCLP << "\n";
 	}
 }
 
@@ -588,7 +587,7 @@ DWORD WINAPI FuncDados(LPVOID id) //Captura os dados do processo da lista circul
 			ReleaseMutex(hMutexArquivo);
 		}
 		ReleaseMutex(hMutexCLP);
-		WaitForSingleObject(hTimeOut, 750);
+		WaitForSingleObject(hTimeOut, 500);
 
 	} while (!Interruptores[4]);
 	_endthreadex(0);

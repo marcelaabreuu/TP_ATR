@@ -55,7 +55,7 @@ DWORD WINAPI ThreadFunc(LPVOID index)
 			cout << msg_total << endl;
 
 				
-		Sleep(500);
+			WaitForSingleObject(hTimeOut, 750);
 	}
 	_endthreadex(0);
 	return(0);
