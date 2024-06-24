@@ -586,14 +586,9 @@ DWORD WINAPI FuncDados(LPVOID id) //Captura os dados do processo da lista circul
 			}
 			else { indice += 1; }
 			ReleaseMutex(hMutexArquivo);
-			sizestackCLP--;
-		}
-		if (sizestackCLP > 100) {
-			for (int j = 0; j < 100; j++)
-				popCLP();
 		}
 		ReleaseMutex(hMutexCLP);
-		//WaitForSingleObject(hTimeOut, 500);
+		WaitForSingleObject(hTimeOut, 750);
 
 	} while (!Interruptores[4]);
 	_endthreadex(0);
