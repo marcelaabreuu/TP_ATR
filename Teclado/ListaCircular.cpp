@@ -155,9 +155,9 @@ void pushCLP(string value) {
 		topCLP = ptrCLP;
 		sizestackCLP++;
 	}
-	for (int j = 0; j < 100; j++)
-		popCLP();
+	
 }
+
 void pop()
 {
 	if (isempty()) {
@@ -372,7 +372,7 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
 	string ORIGEM = "00";
 	do {
-		for (int p = 0; p <= 999999 && !Interruptores[4]; p++) {
+		for (int p = 1; p <= 999999 && !Interruptores[4]; p++) {
 
 			// Strings para receber os codigos de alarmes definidos
 			//Numero de sequencia 0 a 999999
@@ -415,7 +415,7 @@ DWORD WINAPI FuncCLPalarme(LPVOID id) //Alarme proveniente do clp, mesmo formato
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
 	string ORIGEM = "55";
 	do {
-		for (int p = 0; p <= 999999 && !Interruptores[4]; p++) {
+		for (int p = 1; p <= 999999 && !Interruptores[4]; p++) {
 
 			// Strings para receber os codigos de alarmes definidos
 			//Numero de sequencia 0 a 999999
@@ -457,7 +457,7 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
 	string ORIGEM = "99";
 	do {
-		for (int p = 0; p <= 999999 && !Interruptores[4]; p++) {
+		for (int p = 1; p <= 999999 && !Interruptores[4]; p++) {
 
 			// Strings para receber os codigos de alarmes definidos
 			//Numero de sequencia 0 a 999999
@@ -549,8 +549,8 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 			);
 
 			if (result) {
-				wcout << "Number of bytes sent: " << numBytesWritten << endl;
-				wcout << "Message sent: " << char_msg << endl;
+				//wcout << "Number of bytes sent: " << numBytesWritten << endl;
+				//wcout << "Message sent: " << char_msg << endl;
 
 			}
 			else {
@@ -600,8 +600,12 @@ DWORD WINAPI FuncDados(LPVOID id) //Captura os dados do processo da lista circul
 			indice += 1;
 			ReleaseMutex(hMutexArquivo);
 		}
+		if (sizestackCLP > 100) {
+			for (int j = 0; j < 100; j++)
+				popCLP();
+		}
 		ReleaseMutex(hMutexCLP);
-		WaitForSingleObject(hTimeOut, 500);
+		//WaitForSingleObject(hTimeOut, 500);
 
 	} while (!Interruptores[4]);
 	_endthreadex(0);
