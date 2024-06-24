@@ -155,6 +155,8 @@ void pushCLP(string value) {
 		topCLP = ptrCLP;
 		sizestackCLP++;
 	}
+	for (int j = 0; j < 100; j++)
+		popCLP();
 }
 void pop()
 {
