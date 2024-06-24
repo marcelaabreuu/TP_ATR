@@ -20,10 +20,10 @@
 
 using namespace std;
 
-#define _CHECKERROR	1	// Ativa função CheckForError
+#define _CHECKERROR	1	// Ativa funï¿½ï¿½o CheckForError
 
 
-// Casting para terceiro e sexto parâmetros da função _beginthreadex
+// Casting para terceiro e sexto parï¿½metros da funï¿½ï¿½o _beginthreadex
 typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);
 typedef unsigned* CAST_LPDWORD;
 
@@ -74,7 +74,7 @@ BOOL bStatus;
 HANDLE hTimeOut = CreateEvent(NULL, TRUE, FALSE, "EvTimeOut"); //Evento nunca disparado, usado para temporizacao
 
 //Eventos do Teclado
-HANDLE hEventA = CreateEvent(NULL, FALSE, FALSE, "CapturaAlarmes");  //Reset automático e inicializa não-sinalizado
+HANDLE hEventA = CreateEvent(NULL, FALSE, FALSE, "CapturaAlarmes");  //Reset automï¿½tico e inicializa nï¿½o-sinalizado
 HANDLE hEventB = CreateEvent(NULL, FALSE, FALSE, "Pesagem");
 HANDLE hEventC = CreateEvent(NULL, FALSE, FALSE, "LeituraCLP");
 HANDLE hEventD = CreateEvent(NULL, FALSE, FALSE, "CapturaDados");
@@ -155,7 +155,9 @@ void pushCLP(string value) {
 		topCLP = ptrCLP;
 		sizestackCLP++;
 	}
+	
 }
+
 void pop()
 {
 	if (isempty()) {
@@ -280,30 +282,30 @@ int main()
 	hThreadAlarme = (HANDLE)_beginthreadex(
 		NULL,
 		0,
-		(CAST_FUNCTION)FuncAlarme,	// casting necessário
+		(CAST_FUNCTION)FuncAlarme,	// casting necessï¿½rio
 		(LPVOID)Alarme,
 		0,
-		(CAST_LPDWORD)&dwThreadId	// cating necessário
+		(CAST_LPDWORD)&dwThreadId	// cating necessï¿½rio
 	);
 
 	//Tarefa de captura de dados
 	hThreadDados = (HANDLE)_beginthreadex(
 		NULL,
 		0,
-		(CAST_FUNCTION)FuncDados,	// casting necessário
+		(CAST_FUNCTION)FuncDados,	// casting necessï¿½rio
 		(LPVOID)Dados,
 		0,
-		(CAST_LPDWORD)&dwThreadId	// cating necessário
+		(CAST_LPDWORD)&dwThreadId	// cating necessï¿½rio
 	);
 
 	//Tarefa AUX
 	hThreadAUX = (HANDLE)_beginthreadex(
 		NULL,
 		0,
-		(CAST_FUNCTION)ConsomeStackPrincipal,	// casting necessário
+		(CAST_FUNCTION)ConsomeStackPrincipal,	// casting necessï¿½rio
 		(LPVOID)iAUX,
 		0,
-		(CAST_LPDWORD)&dwThreadId	// cating necessário
+		(CAST_LPDWORD)&dwThreadId	// cating necessï¿½rio
 	);
 
 	Sleep(1000);
@@ -340,7 +342,7 @@ int main()
 	for (int t = 0; t < 7; ++t) {
 		GetExitCodeThread(hThread[t], &dwExitCode);
 		printf("thread %d terminou: codigo=%d\n", t, dwExitCode);
-		CloseHandle(hThread[t]);	// apaga referência ao objeto
+		CloseHandle(hThread[t]);	// apaga referï¿½ncia ao objeto
 	}
 
 	CloseHandle(hThread);
@@ -371,7 +373,7 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
 	string ORIGEM = "00";
 	do {
-		for (int p = 0; p <= 999999 && !Interruptores[4]; p++) {
+		for (int p = 1; p <= 999999 && !Interruptores[4]; p++) {
 
 			// Strings para receber os codigos de alarmes definidos
 			//Numero de sequencia 0 a 999999
@@ -389,8 +391,8 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 
 			//Mensagem completa do alarme 
 			string msgPesagem = NSEQ + "#" + ORIGEM + "#" + CODIGO + "#" + TIMESTAMP;
-
-			WaitForSingleObject(hInts[1], INFINITE); //Bloqueia se Sinalizador não-sinalizado	
+			
+			WaitForSingleObject(hInts[1], INFINITE); //Bloqueia se Sinalizador nï¿½o-sinalizado	
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			// Secao critica
 			if (sizestack <= 200) { // Se nao cheia, coloca alarme de pesagem
@@ -400,8 +402,8 @@ DWORD WINAPI FuncPesagem(LPVOID id)
 				}
 			}
 			ReleaseMutex(hMutex1);
-
-			WaitForSingleObject(hTimeOut, 1000 * (rand() % 5 + 1)); //Temporizador
+			//Temporizador: alarme de pesagem
+			WaitForSingleObject(hTimeOut, 1000 * (rand() % 5 + 1)); 
 
 		}
 	} while (!Interruptores[4]);
@@ -414,7 +416,7 @@ DWORD WINAPI FuncCLPalarme(LPVOID id) //Alarme proveniente do clp, mesmo formato
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
 	string ORIGEM = "55";
 	do {
-		for (int p = 0; p <= 999999 && !Interruptores[4]; p++) {
+		for (int p = 1; p <= 999999 && !Interruptores[4]; p++) {
 
 			// Strings para receber os codigos de alarmes definidos
 			//Numero de sequencia 0 a 999999
@@ -432,8 +434,8 @@ DWORD WINAPI FuncCLPalarme(LPVOID id) //Alarme proveniente do clp, mesmo formato
 
 			//Mensagem completa do alarme 
 			string msgAlarme = NSEQ + "#" + ORIGEM + "#" + CODIGO + "#" + TIMESTAMP + "       ";
-
-			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
+			
+			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor nï¿½o-sinalizado
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			if (sizestack <= 200) {  // Se nao vazia, coloca indicador 55 de alarme pesagem
 				push(msgAlarme);
@@ -443,7 +445,8 @@ DWORD WINAPI FuncCLPalarme(LPVOID id) //Alarme proveniente do clp, mesmo formato
 			}
 			ReleaseMutex(hMutex1);
 
-			WaitForSingleObject(hTimeOut, 1000 * (rand() % 5 + 1)); //Temporizador
+			//Temporizador alarme do CLP
+			WaitForSingleObject(hTimeOut, 1000 * (rand() % 5 + 1)); 
 		}
 	} while (!Interruptores[4]);
 	_endthreadex(0);
@@ -455,7 +458,7 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 	HANDLE Events[2] = { hEventNFull, hMutex1 };
 	string ORIGEM = "99";
 	do {
-		for (int p = 0; p <= 999999 && !Interruptores[4]; p++) {
+		for (int p = 1; p <= 999999 && !Interruptores[4]; p++) {
 
 			// Strings para receber os codigos de alarmes definidos
 			//Numero de sequencia 0 a 999999
@@ -480,8 +483,8 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 
 			//Mensagem completa do alarme 
 			string msgDado = NSEQ + "#" + ORIGEM + "#" + VEL + "#" + SENSORIC + "#" + SENSORFC + "#" + TIMESTAMP;
-
-			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor não-sinalizado
+			
+			WaitForSingleObject(hInts[2], INFINITE); //Bloqueia se interruptor nï¿½o-sinalizado
 			WaitForMultipleObjects(2, Events, TRUE, INFINITE);
 			if (sizestack <= 200) {// Se nao vazia, coloca indicador 55 de alarme pesagem
 				push(msgDado);
@@ -492,7 +495,8 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 			}
 			ReleaseMutex(hMutex1);
 
-			WaitForSingleObject(hTimeOut, 500); //Temporizador
+			//Temporizador dados do CLP
+			WaitForSingleObject(hTimeOut, 500); 
 		}
 	} while (!Interruptores[4]);
 	_endthreadex(0);
@@ -501,7 +505,7 @@ DWORD WINAPI FuncCLPdado(LPVOID id)
 
 DWORD WINAPI FuncAlarme(LPVOID id)
 {
-	while (1) // Espera conexão
+	while (1) // Espera conexï¿½o
 	{
 		pipe = CreateFile(
 			"\\\\.\\pipe\\myPipe",
@@ -514,13 +518,13 @@ DWORD WINAPI FuncAlarme(LPVOID id)
 			NULL
 		);
 
-		// Se o handle é válido pode usar o pipe
+		// Se o handle ï¿½ vï¿½lido pode usar o pipe
 			if (pipe != INVALID_HANDLE_VALUE)
 				break;
 	}
 	
 	do {
-		WaitForSingleObject(hInts[0], INFINITE); //Bloqueia se interruptor não sinalizado
+		WaitForSingleObject(hInts[0], INFINITE); //Bloqueia se interruptor nï¿½o sinalizado
 		WaitForSingleObject(hMutexA, INFINITE);
 		if (!isemptyA() && !Interruptores[4]) {
 
@@ -555,16 +559,16 @@ DWORD WINAPI FuncDados(LPVOID id) //Captura os dados do processo da lista circul
 	hFile = CreateFile("processo.txt",
 		GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE, // abre para leitura e escrita
-		NULL,		// atributos de segurança
-		OPEN_ALWAYS,// cria novo arquivo caso ele não exista, abre se já existe
+		NULL,		// atributos de seguranï¿½a
+		OPEN_ALWAYS,// cria novo arquivo caso ele nï¿½o exista, abre se jï¿½ existe
 		FILE_ATTRIBUTE_NORMAL,
 		NULL);		// Template para atributos e flags
-	if (hFile == INVALID_HANDLE_VALUE)  std::cerr << "\nErro na criação do arquivo = " << GetLastError() << "\n";
+	if (hFile == INVALID_HANDLE_VALUE)  std::cerr << "\nErro na criaï¿½ï¿½o do arquivo = " << GetLastError() << "\n";
 	
 	int indice = 0;
 	WaitForSingleObject(hTimeOut, 20);
 	do {
-		WaitForSingleObject(hInts[3], INFINITE); //Bloqueia se interruptor não sinalizado
+		WaitForSingleObject(hInts[3], INFINITE); //Bloqueia se interruptor nï¿½o sinalizado
 		WaitForSingleObject(hMutexCLP, INFINITE);
 		if (!isemptyCLP() && !Interruptores[4]) {
 			showTopCLP();
@@ -577,15 +581,19 @@ DWORD WINAPI FuncDados(LPVOID id) //Captura os dados do processo da lista circul
 			bStatus = WriteFile(hFile, char_dado, 28, &dwBytesWritten, NULL);
 			if (bStatus == 0)  std::cerr << "\nErro na escrita de Dados = " << GetLastError() << "\n";
 
-			// Atualiza a posição para leitura
+			// Atualiza a posiï¿½ï¿½o para leitura
 			if (indice == 99) { indice = 0;  SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
 			}
 			else { indice += 1; }
 			ReleaseMutex(hMutexArquivo);
 			sizestackCLP--;
 		}
+		if (sizestackCLP > 100) {
+			for (int j = 0; j < 100; j++)
+				popCLP();
+		}
 		ReleaseMutex(hMutexCLP);
-		WaitForSingleObject(hTimeOut, 500);
+		//WaitForSingleObject(hTimeOut, 500);
 
 	} while (!Interruptores[4]);
 	_endthreadex(0);
